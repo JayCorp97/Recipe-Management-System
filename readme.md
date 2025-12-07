@@ -21,3 +21,6 @@ Search & Filter – Quickly find recipes
 Responsive Design – Works on desktop and mobile
 
 Creative UI – Modern, glassmorphism login screen with icons and gradients
+
+
+Deakin University SIT725 Group Project

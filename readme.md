@@ -1,6 +1,6 @@
 Recipe Management System
 
-
+<img width="150" height="150" alt="rms logo" src="https://github.com/user-attachments/assets/1e208d86-85f9-4e20-b66a-04d9d8536846" />
 
 A modern, user-friendly web application to create, organize, and manage recipes. Users can add recipes with ingredients, instructions, categories, and images, making it easy to build a personal cookbook or manage recipes for home or professional use.
 

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dashboard</title>
+</head>
+<body>
+<h2>Your Recipes</h2>
+<ul id="recipes"></ul>
+
+<script>
+fetch("/api/recipes", {
+  headers: {
+    Authorization: localStorage.getItem("token")
+  }
+})
+.then(res => res.json())
+.then(data => {
+  document.getElementById("recipes").innerHTML =
+    data.map(r => `<li>${r.title}</li>`).join("");
+})
+.catch(err => console.error(err));
+</script>
+</body>
+</html>

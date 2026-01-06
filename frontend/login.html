@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login | Recipe Management System</title>
+
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+</head>
+
+<body>
+
+  <div class="login-wrapper">
+    <div class="login-card">
+
+      <h2>Welcome Back 👋</h2>
+      <p class="subtitle">Sign in to manage your recipes</p>
+
+      <!-- Error message -->
+      <div class="error-message" id="error"></div>
+
+      <form id="loginForm">
+
+        <div class="input-group">
+          <span class="icon">📧</span>
+          <input
+            type="email"
+            id="email"
+            placeholder="Email Address"
+            required
+            autocomplete="email"
+          />
+        </div>
+
+        <div class="input-group">
+          <span class="icon">🔒</span>
+          <input
+            type="password"
+            id="password"
+            placeholder="Password"
+            required
+            autocomplete="current-password"
+          />
+        </div>
+
+        <button type="submit" class="login-btn">
+          Login
+        </button>
+
+      </form>
+
+      <p class="register-text">
+        New here? <a href="register.html">Create an account</a>
+      </p>
+
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('loginForm');
+    const errorDiv = document.getElementById('error');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault(); // prevent default form submit
+
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      errorDiv.textContent = '';
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          errorDiv.textContent = data.message || 'Login failed';
+          return;
+        }
+
+        // Save JWT token in localStorage
+        localStorage.setItem('token', data.token);
+
+        // Redirect to dashboard
+        window.location.href = 'dashboard.html';
+
+      } catch (err) {
+        console.error(err);
+        errorDiv.textContent = 'Something went wrong. Try again.';
+      }
+    });
+  </script>
+
+</body>
+</html>

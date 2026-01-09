@@ -23,66 +23,30 @@
 <div class="container">
 
   <aside class="sidebar">
-    <button class="active" id="myRecipesBtn">My Recipes</button>
+    <button class="active" id="RecipesBtn">Recipes</button>
+    <button id="myRecipesBtn">My Recipes</button>
     <button id="favouritesBtn">Favourites</button>
     <button id="mealPlannerBtn">Meal Planner</button>
     <button id="settingsBtn">Settings</button>
     <button class="logout" id="logoutBtn">Logout</button>
   </aside>
 
-  <main class="content">
-    <div class="top-bar">
-      <h2>My Recipes</h2>
-      <button class="add-recipe" id="addRecipeBtn">+ Add New Recipe</button>
-    </div>
-
-    <div class="recipes-grid" id="recipesGrid">
-      <!-- Recipe cards -->
-      <div class="recipe-card">
-        <div class="image-placeholder">[IMAGE]</div>
-        <div class="content">
-          <div class="title">My Recipe 1</div>
-          <div class="rating">Rating: ★★★★☆</div>
-          <div class="actions">
-            <button>Edit</button>
-            <button>Delete</button>
-          </div>
-        </div>
-      </div>
-      <div class="recipe-card">
-        <div class="image-placeholder">[IMAGE]</div>
-        <div class="content">
-          <div class="title">My Recipe 2</div>
-          <div class="rating">Rating: ★★★★☆</div>
-          <div class="actions">
-            <button>Edit</button>
-            <button>Delete</button>
-          </div>
-        </div>
-      </div>
-      <div class="recipe-card">
-        <div class="image-placeholder">[IMAGE]</div>
-        <div class="content">
-          <div class="title">My Recipe 3</div>
-          <div class="rating">Rating: ★★★★☆</div>
-          <div class="actions">
-            <button>Edit</button>
-            <button>Delete</button>
-          </div>
-        </div>
-      </div>
-    </div>
+  <main class="content" id="mainContent">
+    <!-- content loads here -->
   </main>
+
+
 </div>
 
-<!-- Include the global auth check script -->
+<!-- Include the global script -->
 <script src="js/authCheck.js"></script>
+<script src="js/dashboard.js"></script>
 
 <script>
-  // Update greeting or username display if you want full name
+  // Update greeting
   const usernameDisplay = document.getElementById("usernameDisplay");
 
-  // When loadUser() in authCheck.js resolves, we can show the name
+  // When loadUser() in authCheck.js resolves
   async function showUsername() {
     try {
       const res = await fetch("/api/auth/me", {

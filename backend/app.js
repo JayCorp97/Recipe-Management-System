@@ -15,13 +15,25 @@ app.use(express.json());
 // Serve frontend
 app.use(express.static(path.join(__dirname, "../frontend")));
 
+// Optional explicit root route
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "../frontend/login.html"));
+});
+
 // API routes
 app.use("/api/auth", authRoutes);
 //app.use("/api/recipes", recipeRoutes);
 
-// Handle 404 for unknown routes
+// Handle 404 for unknown routes  
 app.use((req, res) => {
+  console.log(req, res)
   res.status(404).send('Page Not Found');
 });
 
+// API ROUTES FOR RECIPES
+const recipeRoutes = require("./routes/recipe");
+
+app.use("/recipes", recipeRoutes);
+
 module.exports = app;
+

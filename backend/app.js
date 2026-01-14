@@ -10,7 +10,8 @@ const app = express();
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+// Configure body parser with size limits (10kb for auth endpoints, 1mb for others)
+app.use(express.json({ limit: "1mb" }));
 
 // Serve frontend
 app.use(express.static(path.join(__dirname, "../frontend")));

@@ -40,11 +40,28 @@
       <div class="input-group">
         <span class="icon">🔒</span>
         <input type="password" id="password" placeholder="Password" required />
+        <div class="password-requirements" id="passwordRequirements" style="display: none;">
+          <small>Password must contain:</small>
+          <ul id="requirementList">
+            <li id="req-length">At least 8 characters</li>
+            <li id="req-upper">One uppercase letter</li>
+            <li id="req-lower">One lowercase letter</li>
+            <li id="req-number">One number</li>
+            <li id="req-special">One special character</li>
+          </ul>
+        </div>
+        <div class="password-strength" id="passwordStrength" style="display: none;">
+          <div class="strength-bar">
+            <div class="strength-fill" id="strengthFill"></div>
+          </div>
+          <span class="strength-text" id="strengthText"></span>
+        </div>
       </div>
 
       <div class="input-group">
         <span class="icon">🔒</span>
         <input type="password" id="confirm_password" placeholder="Confirm Password" required />
+        <div class="password-match" id="passwordMatch" style="display: none;"></div>
       </div>
 
       <button type="submit" class="login-btn">Register</button>
@@ -58,20 +75,170 @@
   </div>
 </div>
 
+<style>
+  .password-requirements {
+    margin-top: 8px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    font-size: 12px;
+  }
+  .password-requirements ul {
+    margin: 5px 0 0 0;
+    padding-left: 20px;
+  }
+  .password-requirements li {
+    margin: 3px 0;
+    color: #ff6b6b;
+    transition: color 0.3s;
+  }
+  .password-requirements li.valid {
+    color: #51cf66;
+  }
+  .password-strength {
+    margin-top: 8px;
+  }
+  .strength-bar {
+    width: 100%;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .strength-fill {
+    height: 100%;
+    transition: width 0.3s, background-color 0.3s;
+    width: 0%;
+  }
+  .strength-fill.weak { width: 33%; background-color: #ff6b6b; }
+  .strength-fill.medium { width: 66%; background-color: #ffd93d; }
+  .strength-fill.strong { width: 100%; background-color: #51cf66; }
+  .strength-text {
+    display: block;
+    margin-top: 4px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.7);
+  }
+  .password-match {
+    margin-top: 5px;
+    font-size: 12px;
+    padding: 5px;
+    border-radius: 4px;
+  }
+  .password-match.match {
+    color: #51cf66;
+  }
+  .password-match.no-match {
+    color: #ff6b6b;
+  }
+</style>
+
 <script>
   const form = document.getElementById("registerForm");
   const error = document.getElementById("error");
+  const passwordInput = document.getElementById("password");
+  const confirmPasswordInput = document.getElementById("confirm_password");
+  const passwordRequirements = document.getElementById("passwordRequirements");
+  const requirementList = document.getElementById("requirementList");
+  const passwordStrength = document.getElementById("passwordStrength");
+  const strengthFill = document.getElementById("strengthFill");
+  const strengthText = document.getElementById("strengthText");
+  const passwordMatch = document.getElementById("passwordMatch");
 
+  // Password validation function
+  function validatePassword(password) {
+    const checks = {
+      length: password.length >= 8,
+      upper: /[A-Z]/.test(password),
+      lower: /[a-z]/.test(password),
+      number: /[0-9]/.test(password),
+      special: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)
+    };
+    return checks;
+  }
+
+  // Calculate password strength
+  function calculateStrength(checks) {
+    const validCount = Object.values(checks).filter(v => v).length;
+    if (validCount <= 2) return { level: 'weak', text: 'Weak' };
+    if (validCount <= 4) return { level: 'medium', text: 'Medium' };
+    return { level: 'strong', text: 'Strong' };
+  }
+
+  // Update password requirements display
+  function updatePasswordRequirements(password) {
+    if (password.length === 0) {
+      passwordRequirements.style.display = 'none';
+      passwordStrength.style.display = 'none';
+      return;
+    }
+
+    passwordRequirements.style.display = 'block';
+    passwordStrength.style.display = 'block';
+
+    const checks = validatePassword(password);
+    const strength = calculateStrength(checks);
+
+    // Update requirement list
+    document.getElementById('req-length').classList.toggle('valid', checks.length);
+    document.getElementById('req-upper').classList.toggle('valid', checks.upper);
+    document.getElementById('req-lower').classList.toggle('valid', checks.lower);
+    document.getElementById('req-number').classList.toggle('valid', checks.number);
+    document.getElementById('req-special').classList.toggle('valid', checks.special);
+
+    // Update strength bar
+    strengthFill.className = 'strength-fill ' + strength.level;
+    strengthText.textContent = `Password Strength: ${strength.text}`;
+  }
+
+  // Check password match
+  function checkPasswordMatch() {
+    const password = passwordInput.value;
+    const confirm = confirmPasswordInput.value;
+
+    if (confirm.length === 0) {
+      passwordMatch.style.display = 'none';
+      return;
+    }
+
+    passwordMatch.style.display = 'block';
+    if (password === confirm) {
+      passwordMatch.textContent = '✓ Passwords match';
+      passwordMatch.className = 'password-match match';
+    } else {
+      passwordMatch.textContent = '✗ Passwords do not match';
+      passwordMatch.className = 'password-match no-match';
+    }
+  }
+
+  // Real-time password validation
+  passwordInput.addEventListener('input', (e) => {
+    updatePasswordRequirements(e.target.value);
+    checkPasswordMatch();
+  });
+
+  confirmPasswordInput.addEventListener('input', checkPasswordMatch);
+
+  // Form submission
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
     const f_name = document.getElementById("f_name").value.trim();
     const l_name = document.getElementById("l_name").value.trim();
     const email = document.getElementById("email").value.trim();
-    const password = document.getElementById("password").value;
-    const confirm_password = document.getElementById("confirm_password").value;
+    const password = passwordInput.value;
+    const confirm_password = confirmPasswordInput.value;
 
     error.textContent = "";
+
+    // Client-side password validation
+    const passwordChecks = validatePassword(password);
+    const allValid = Object.values(passwordChecks).every(v => v);
+    
+    if (!allValid) {
+      error.textContent = "Password does not meet all requirements";
+      return;
+    }
 
     // Confirm password check
     if (password !== confirm_password) {
@@ -89,12 +256,24 @@
       const data = await res.json();
 
       if (!res.ok) {
-        error.textContent = data.message || "Registration failed";
+        // Handle password validation errors from backend
+        if (data.errors && Array.isArray(data.errors)) {
+          error.textContent = data.errors.join(". ");
+        } else {
+          error.textContent = data.message || "Registration failed";
+        }
         return;
       }
 
-      alert("Registration successful! Please login.");
-      window.location.href = "login.html";
+      // Auto-login: Save token and redirect to dashboard
+      if (data.token) {
+        localStorage.setItem('token', data.token);
+        window.location.href = 'dashboard.html';
+      } else {
+        // Fallback if token not received
+        alert("Registration successful! Please login.");
+        window.location.href = "login.html";
+      }
     } catch (err) {
       error.textContent = "Network error, please try again.";
       console.error(err);

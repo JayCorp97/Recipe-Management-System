@@ -46,6 +46,14 @@
           />
         </div>
 
+        <div class="remember-me">
+          <label>
+            <input type="checkbox" id="rememberEmail" />
+            Remember my email
+          </label>
+        </div>
+
+
         <button type="submit" class="login-btn">
           Login
         </button>
@@ -60,45 +68,62 @@
   </div>
 
   <script>
-    const form = document.getElementById('loginForm');
-    const errorDiv = document.getElementById('error');
+  const form = document.getElementById('loginForm');
+  const errorDiv = document.getElementById('error');
+  const emailInput = document.getElementById('email');
+  const rememberCheckbox = document.getElementById('rememberEmail');
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault(); // prevent default form submit
+  // Load remembered email on page load
+  window.addEventListener('DOMContentLoaded', () => {
+    const savedEmail = localStorage.getItem('rememberedEmail');
+    if (savedEmail) {
+      emailInput.value = savedEmail;
+      rememberCheckbox.checked = true;
+    }
+  });
 
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
 
-      errorDiv.textContent = '';
+    const email = emailInput.value;
+    const password = document.getElementById('password').value;
 
-      try {
-        const res = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ email, password })
-        });
+    errorDiv.textContent = '';
 
-        const data = await res.json();
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
 
-        if (!res.ok) {
-          errorDiv.textContent = data.message || 'Login failed';
-          return;
-        }
+      const data = await res.json();
 
-        // Save JWT token in localStorage
-        localStorage.setItem('token', data.token);
-
-        // Redirect to dashboard
-        window.location.href = 'dashboard.html';
-
-      } catch (err) {
-        console.error(err);
-        errorDiv.textContent = 'Something went wrong. Try again.';
+      if (!res.ok) {
+        errorDiv.textContent = data.message || 'Login failed';
+        return;
       }
-    });
-  </script>
+
+      // Remember email logic
+      if (rememberCheckbox.checked) {
+        localStorage.setItem('rememberedEmail', email);
+      } else {
+        localStorage.removeItem('rememberedEmail');
+      }
+
+      // Save JWT token
+      localStorage.setItem('token', data.token);
+
+      // Redirect
+      window.location.href = 'dashboard.html';
+
+    } catch (err) {
+      console.error(err);
+      errorDiv.textContent = 'Something went wrong. Try again.';
+    }
+  });
+</script>
+
 
 </body>
 </html>

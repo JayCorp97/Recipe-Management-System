@@ -6,6 +6,7 @@
   <title>Recipe Management System | Login</title>
 
   <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/overlay.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="icon" type="image/x-icon" href="images/favicon.ico">
@@ -22,28 +23,19 @@
       <!-- Error message -->
       <div class="error-message" id="error"></div>
 
+      <!-- Info message -->
+      <div class="info-message" id="info"></div>
+
       <form id="loginForm">
 
         <div class="input-group">
           <span class="icon">📧</span>
-          <input
-            type="email"
-            id="email"
-            placeholder="Email Address"
-            required
-            autocomplete="email"
-          />
+          <input type="email" id="email" placeholder="Email Address" required />
         </div>
 
         <div class="input-group">
           <span class="icon">🔒</span>
-          <input
-            type="password"
-            id="password"
-            placeholder="Password"
-            required
-            autocomplete="current-password"
-          />
+          <input type="password" id="password" placeholder="Password" required />
         </div>
 
         <div class="remember-me">
@@ -53,9 +45,18 @@
           </label>
         </div>
 
-
+        <!-- STEP 1 -->
         <button type="submit" class="login-btn" id="loginBtn">
           Login
+        </button>
+
+        <!-- STEP 2: Send OTP -->
+        <button type="button" class="login-btn" id="sendOtpBtn" style="display:none;">
+          Send OTP
+        </button>
+
+        <button type="button" class="login-btn" id="enterOtpBtn" style="display:none;">
+          Enter OTP
         </button>
 
       </form>
@@ -67,94 +68,40 @@
     </div>
   </div>
 
-  <script>
-  const form = document.getElementById('loginForm');
-  const errorDiv = document.getElementById('error');
-  const emailInput = document.getElementById('email');
-  const passwordInput = document.getElementById('password');
-  const rememberCheckbox = document.getElementById('rememberEmail');
-  const loginBtn = document.getElementById('loginBtn');
+  <!-- OTP Overlay -->
+  <div class="overlay" id="otpOverlay">
+    <div class="dialog">
+      <!-- <span class="close-btn" onclick="closeOverlay()">&times;</span> -->
+      <h2>Enter OTP</h2>
 
-  // Loading state management
-  function setLoading(isLoading) {
-    if (isLoading) {
-      loginBtn.disabled = true;
-      loginBtn.textContent = 'Logging in...';
-      loginBtn.style.opacity = '0.7';
-      loginBtn.style.cursor = 'not-allowed';
-      emailInput.disabled = true;
-      passwordInput.disabled = true;
-    } else {
-      loginBtn.disabled = false;
-      loginBtn.textContent = 'Login';
-      loginBtn.style.opacity = '1';
-      loginBtn.style.cursor = 'pointer';
-      emailInput.disabled = false;
-      passwordInput.disabled = false;
-    }
-  }
+      <!-- Error message -->
+      <div class="error-message" id="errorOtp"></div>
 
-  // Load remembered email on page load
-  window.addEventListener('DOMContentLoaded', () => {
-    const savedEmail = localStorage.getItem('rememberedEmail');
-    if (savedEmail) {
-      emailInput.value = savedEmail;
-      rememberCheckbox.checked = true;
-    }
-  });
+      <!-- Countdown timer -->
+      <div id="otpTimer" style="margin-bottom: 20px; font-weight: 600; color: #FF9800;">
+        02:00
+      </div>
 
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
+      <div class="input-group">
+        <input type="text" placeholder="Enter OTP" id="otp" maxlength="6" style="text-align: center;" required />
+      </div>
 
-    const email = emailInput.value;
-    const password = passwordInput.value;
+      <button type="button" class="login-btn" id="verifyOtpBtn">
+        Verify OTP
+      </button>
+      <div class="otp-btn-group" style="display: flex; gap: 10px; margin-top: 10px;">
+        <button type="button" class="login-btn" id="resendOtpBtn" style="flex:1; background-color:#757575;">
+          Resend OTP
+        </button>
+        <button type="button" class="login-btn" id="backLgnBtn" onclick="closeOverlay()" style="flex:1; background-color:#0e4b74;">
+          Back To Login
+        </button>
+      </div>
 
-    errorDiv.textContent = '';
-    setLoading(true);
+    </div>
+  </div>
 
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        // Handle error response format
-        const errorMessage = data.error?.message || data.message || 'Login failed';
-        errorDiv.textContent = errorMessage;
-        errorDiv.style.display = 'block';
-        setLoading(false);
-        return;
-      }
-
-      // Remember email logic
-      if (rememberCheckbox.checked) {
-        localStorage.setItem('rememberedEmail', email);
-      } else {
-        localStorage.removeItem('rememberedEmail');
-      }
-
-      // Save JWT token
-      localStorage.setItem('token', data.token);
-
-      // Success: Keep loading state during redirect
-      loginBtn.textContent = 'Success! Redirecting...';
-
-      // Redirect
-      window.location.href = 'dashboard.html';
-
-    } catch (err) {
-      console.error(err);
-      errorDiv.textContent = 'Network error. Please check your connection and try again.';
-      errorDiv.style.display = 'block';
-      setLoading(false);
-    }
-  });
-</script>
-
-
+  <!-- External JS -->
+  <script src="js/login.js"></script>
 </body>
 </html>

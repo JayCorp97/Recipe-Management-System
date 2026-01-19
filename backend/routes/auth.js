@@ -1,3 +1,5 @@
+//routes/auth.js
+
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
@@ -7,6 +9,7 @@ const { userOrAdmin, adminOnly } = require("../middleware/roleMiddleware");
 const authLimiter = require("../middleware/rateLimiter");
 const { validateRegister, validateLogin } = require("../middleware/validation");
 const { sendError, ErrorCodes } = require("../utils/errorHandler");
+const crypto = require("crypto");
 
 const router = express.Router();
 
@@ -183,56 +186,88 @@ router.post("/login", authLimiter, validateLogin, async (req, res) => {
   }
 });
 
+
 /**
- * @route   POST /api/auth/admin/login
- * @desc    Admin login - verifies admin role before issuing token
+ * REQUEST OTP LOGIN
+ * POST /api/auth/request-otp
  */
-router.post("/admin/login", authLimiter, validateLogin, async (req, res) => {
+router.post("/request-otp", authLimiter, async (req, res) => {
   try {
-    // Check payload size (10kb limit)
-    const contentLength = req.get("content-length");
-    if (contentLength && parseInt(contentLength) > 10 * 1024) {
-      return sendError(res, 413, ErrorCodes.PAYLOAD_TOO_LARGE, 
-        "Request payload too large", 
-        "Maximum 10kb allowed for login");
+    const { email } = req.body;
+    if (!email) {
+      return sendError(res, 400, ErrorCodes.VALIDATION_ERROR, "Email is required");
     }
 
-    const { email, password } = req.body;
-
-    // Email is already normalized by express-validator
     const normalizedEmail = email.toLowerCase().trim();
-
-    // Find user
     const user = await User.findOne({ email: normalizedEmail });
+
     if (!user) {
-      return sendError(res, 401, ErrorCodes.AUTH_ERROR, 
-        "Invalid email or password");
+      return sendError(res, 404, ErrorCodes.NOT_FOUND, "User not found");
     }
 
-    // Compare passwords
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return sendError(res, 401, ErrorCodes.AUTH_ERROR, 
-        "Invalid email or password");
-    }
-
-    // Active user check
     if (user.active !== 1) {
-      return sendError(res, 403, ErrorCodes.FORBIDDEN, 
-        "Account is inactive");
+      return sendError(res, 403, ErrorCodes.FORBIDDEN, "Account is inactive");
     }
 
-    // Verify admin role before issuing token (US4-T.6)
-    if (user.role !== "admin") {
-      return sendError(res, 403, ErrorCodes.FORBIDDEN, 
-        "Admin access required");
+    const otp = crypto.randomInt(100000, 999999).toString();
+
+    user.otp = otp;
+    user.otpExpires = Date.now() + 5 * 60 * 1000; // 5 minutes
+    await user.save();
+
+    // TEMP: log OTP (replace with email/SMS later)
+    console.log(`OTP for ${normalizedEmail}:`, otp);
+
+    return res.json({ message: "OTP sent successfully" });
+
+  } catch (error) {
+    console.error("Request OTP error:", error);
+    return sendError(res, 500, ErrorCodes.SERVER_ERROR, "Server error");
+  }
+});
+
+/**
+ * VERIFY OTP & LOGIN
+ * POST /api/auth/verify-otp
+ */
+router.post("/verify-otp", authLimiter, async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return sendError(
+        res,
+        400,
+        ErrorCodes.VALIDATION_ERROR,
+        "Email and OTP are required"
+      );
     }
 
-    // Generate JWT with user id and role, 24-hour expiry
+    const normalizedEmail = email.toLowerCase().trim();
+    const user = await User.findOne({ email: normalizedEmail });
+
+    if (!user) {
+      return sendError(res, 404, ErrorCodes.NOT_FOUND, "User not found");
+    }
+
+    if (
+      user.otp !== otp ||
+      !user.otpExpires ||
+      user.otpExpires < Date.now()
+    ) {
+      return sendError(res, 401, ErrorCodes.AUTH_ERROR, "Invalid or expired OTP");
+    }
+
+    // Clear OTP after use
+    user.otp = null;
+    user.otpExpires = null;
+    await user.save();
+
+    // Generate JWT (same as password login)
     const token = jwt.sign(
-      { 
+      {
         id: user._id,
-        role: user.role
+        role: user.role || "user"
       },
       process.env.JWT_SECRET,
       { expiresIn: "24h" }
@@ -241,15 +276,15 @@ router.post("/admin/login", authLimiter, validateLogin, async (req, res) => {
     return res.json({ token });
 
   } catch (error) {
-    console.error("Admin login error:", error);
-    return sendError(res, 500, ErrorCodes.SERVER_ERROR, 
-      "Server error", 
-      process.env.NODE_ENV === "development" ? error.message : undefined);
+    console.error("Verify OTP error:", error);
+    return sendError(res, 500, ErrorCodes.SERVER_ERROR, "Server error");
   }
 });
 
-// Get current logged-in user - protected + role-based access
-router.get("/me", authMiddleware, userOrAdmin, async (req, res) => {
+
+
+// Get current logged-in user
+router.get("/me", authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.userId).select("-password");
     if (!user) {

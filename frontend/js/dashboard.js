@@ -69,7 +69,7 @@ mainContent.addEventListener("click", async (e) => {
     window.location.href = `/pages/view-edit-recipe.html?id=${encodeURIComponent(recipeId)}`;
     return;
   }
-
+ if (window.initRecipeFilters) window.initRecipeFilters();
   const deleteBtn = e.target.closest(".delete-btn");
   if (deleteBtn) {
     const recipeId = deleteBtn.dataset.id;

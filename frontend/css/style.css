@@ -98,7 +98,14 @@ input[type="password"] {
 }
 
 .error-message {
-  color: #FF9800;
+  color: #ff5e00;
+  margin-bottom: 1rem;
+  text-align: center;
+  font-weight: 600;
+}
+
+.info-message {
+  color: #075c15;
   margin-bottom: 1rem;
   text-align: center;
   font-weight: 600;

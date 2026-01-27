@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="css/dashboard.css" />
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 </head>
 
 <body>
@@ -17,7 +18,13 @@
     <img src="images/rms_logo.png" alt="RMS Logo" />
   </div>
   <input type="search" placeholder="Search recipes..." />
-  <div class="username" id="usernameDisplay">User Name</div>
+  <div class="user-profile">
+  <button class="user-btn">
+    <img src="images/user-avatar.png" alt="User" class="user-avatar">
+    <span class="username" id="usernameDisplay">User</span>
+  </button>
+</div>
+
 </header>
 
 <div class="container">
@@ -42,6 +49,7 @@
 <!-- Include the global script -->
 <script src="js/authCheck.js"></script>
 <script src="js/dashboard.js"></script>
+<script src="js/filterCate.js"></script>
 
 <script>
   // Update greeting

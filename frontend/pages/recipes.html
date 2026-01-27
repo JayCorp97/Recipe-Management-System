@@ -2,6 +2,39 @@
   <h2>Recipes</h2>
 </div>
 
+<!-- Filter Bar -->
+<div class="filter-bar">
+  <select id="filterRating">
+    <option value="">Filter by Rating</option>
+    <option value="5">★★★★★</option>
+    <option value="4">★★★★☆ & up</option>
+    <option value="3">★★★☆☆ & up</option>
+  </select>
+
+  <select id="filterCategory">
+    <option value="">Filter by Category</option>
+    <option value="breakfast">Breakfast</option>
+    <option value="lunch">Lunch</option>
+    <option value="dinner">Dinner</option>
+  </select>
+
+  <select id="filterRegion">
+    <option value="">Filter by Region</option>
+    <option value="asia">Asia</option>
+    <option value="europe">Europe</option>
+    <option value="america">America</option>
+  </select>
+
+  <select id="filterSort">
+    <option value="">Sort by</option>
+    <option value="latest">Latest</option>
+    <option value="oldest">Oldest</option>
+  </select>
+
+  <button id="clearFilters">Clear</button>
+</div>
+
 <div class="recipes-grid" id="recipesGrid">
   <p>Loading recipes...</p>
 </div>
+

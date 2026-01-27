@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>View Recipe</title>
-  <link rel="stylesheet" href="/css/view-recipe.css" />
+  <link rel="stylesheet" href="/css/view-edit-recipe.css" />
 </head>
 
 <body>
@@ -47,22 +47,6 @@
   </main>
 
   <script>
-    // ---------- Storage helpers ----------
-    const STORAGE_KEY = "recipes";
-
-    function getAllRecipes() {
-      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
-      catch { return []; }
-    }
-
-    function saveAllRecipes(recipes) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(recipes));
-    }
-
-    function getRecipeById(id) {
-      return getAllRecipes().find(r => String(r.id) === String(id));
-    }
-
     // ---------- Page helpers ----------
     function qp(key) {
       return new URL(window.location.href).searchParams.get(key);
@@ -83,8 +67,8 @@
 
       const img = document.getElementById("img");
       const ph = document.getElementById("imgPlaceholder");
-      if (recipe.imageDataUrl) {
-        img.src = recipe.imageDataUrl;
+      if (recipe.imageUrl) {
+        img.src = recipe.imageUrl;
         img.style.display = "block";
         ph.style.display = "none";
       } else {
@@ -114,35 +98,82 @@
     }
 
     // ---------- Init ----------
-    const id = qp("id");
-    const recipe = id ? getRecipeById(id) : null;
-
-    if (!recipe) {
-      alert("Recipe not found.");
-      window.location.href = "/pages/my-recipes.html";
-    } else {
-      render(recipe);
-
-      // Edit route
-      document.getElementById("editBtn").href =
-        `/pages/edit-recipe.html?id=${encodeURIComponent(recipe.id)}`;
-
-      // Delete
-      document.getElementById("deleteBtn").addEventListener("click", () => {
-        const ok = confirm("Delete this recipe?");
-        if (!ok) return;
-
-        const recipes = getAllRecipes().filter(r => String(r.id) !== String(recipe.id));
-        saveAllRecipes(recipes);
-
+    async function init() {
+      const id = qp("id");
+      if (!id) {
+        alert("Recipe ID not provided.");
         window.location.href = "/pages/my-recipes.html";
-      });
+        return;
+      }
 
-      // Close/back
-      document.getElementById("closeBtn").addEventListener("click", () => {
-        window.history.back();
-      });
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("Please log in to view recipes.");
+        window.location.href = "/login.html";
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/recipes/${encodeURIComponent(id)}`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          throw new Error(data.message || "Failed to load recipe");
+        }
+
+        const recipe = data.recipe;
+        if (!recipe) {
+          throw new Error("Recipe not found");
+        }
+
+        render(recipe);
+
+        // Edit route - navigate to add-recipe.html with edit mode
+        document.getElementById("editBtn").href =
+          `/pages/add-recipe.html?id=${encodeURIComponent(recipe._id)}`;
+
+        // Delete
+        document.getElementById("deleteBtn").addEventListener("click", async () => {
+          const ok = confirm("Delete this recipe?");
+          if (!ok) return;
+
+          try {
+            const deleteRes = await fetch(`/api/recipes/${encodeURIComponent(id)}`, {
+              method: "DELETE",
+              headers: {
+                Authorization: `Bearer ${token}`
+              }
+            });
+
+            const deleteData = await deleteRes.json().catch(() => ({}));
+            if (!deleteRes.ok) {
+              throw new Error(deleteData.message || "Failed to delete recipe");
+            }
+
+            alert("Recipe deleted successfully.");
+            window.location.href = "/pages/my-recipes.html";
+          } catch (err) {
+            alert(err.message || "Failed to delete recipe");
+          }
+        });
+
+        // Close/back
+        document.getElementById("closeBtn").addEventListener("click", () => {
+          window.history.back();
+        });
+      } catch (err) {
+        console.error(err);
+        alert(err.message || "Failed to load recipe");
+        window.location.href = "/pages/my-recipes.html";
+      }
     }
+
+    init();
   </script>
 </body>
 </html>

@@ -56,8 +56,8 @@ mainContent.addEventListener("click", (e) => {
   const recipeId = editBtn.dataset.id;
   if (!recipeId) return;
 
-  // Go to the view/edit page and pass the recipe id in the query string
-  window.location.href = `/pages/view-edit-recipe.html?id=${encodeURIComponent(recipeId)}`;
+  // Go directly to add-recipe page in edit mode
+  window.location.href = `/pages/add-recipe.html?id=${encodeURIComponent(recipeId)}`;
 });
 
 // Load default page
@@ -67,7 +67,7 @@ mainContent.addEventListener("click", async (e) => {
   const editBtn = e.target.closest(".edit-btn");
   if (editBtn) {
     const recipeId = editBtn.dataset.id;
-    window.location.href = `/pages/view-edit-recipe.html?id=${encodeURIComponent(recipeId)}`;
+    window.location.href = `/pages/add-recipe.html?id=${encodeURIComponent(recipeId)}`;
     return;
   }
  if (window.initRecipeFilters) window.initRecipeFilters();

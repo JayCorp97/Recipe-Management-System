@@ -6,64 +6,345 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Add New Recipe</title>
   <link rel="stylesheet" href="/css/add-recipe.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 </head>
 
 <body>
   <main class="page">
     <section class="panel">
-      <h1 class="panel-title">Add New Recipe</h1>
-      <div class="rule" aria-hidden="true"></div>
+      <div class="panel-header">
+        <h1 class="panel-title">
+          <i class="fas fa-utensils"></i>
+          Add New Recipe
+        </h1>
+        <p class="panel-subtitle">Create and share your delicious recipes with the community</p>
+      </div>
 
       <form class="form" id="addRecipeForm">
+        <!-- Error/Success Messages -->
+        <div class="message message-error" id="errorMessage" style="display: none;"></div>
+        <div class="message message-success" id="successMessage" style="display: none;"></div>
+
         <!-- Recipe Title -->
         <div class="field">
-          <label for="title">Recipe Title</label>
-          <input id="title" name="title" type="text" placeholder="Enter recipe title..." required />
+          <label for="title">
+            <i class="fas fa-heading"></i>
+            Recipe Title
+          </label>
+          <input id="title" name="title" type="text" placeholder="e.g., Classic Chocolate Chip Cookies" required />
         </div>
 
         <!-- Description -->
         <div class="field">
-          <label for="desc">Description</label>
-          <textarea id="desc" name="desc" placeholder="Enter recipe description..." required></textarea>
+          <label for="desc">
+            <i class="fas fa-align-left"></i>
+            Description
+          </label>
+          <textarea id="desc" name="desc" placeholder="Describe your recipe... What makes it special? What's the story behind it?" required></textarea>
+          <div class="field-hint">Share what makes this recipe unique and delicious!</div>
+        </div>
+
+        <!-- Category and Rating Row -->
+        <div class="field-row">
+          <!-- Category -->
+          <div class="field field-half">
+            <label for="category">
+              <i class="fas fa-tags"></i>
+              Category
+            </label>
+            <select id="category" name="category" class="select-field">
+              <option value="">Select a category</option>
+              <option value="Breakfast">Breakfast</option>
+              <option value="Lunch">Lunch</option>
+              <option value="Dinner" selected>Dinner</option>
+              <option value="Snack">Snack</option>
+              <option value="Dessert">Dessert</option>
+              <option value="Appetizer">Appetizer</option>
+              <option value="Italian">Italian</option>
+              <option value="Indian">Indian</option>
+              <option value="Chinese">Chinese</option>
+              <option value="Mexican">Mexican</option>
+              <option value="American">American</option>
+              <option value="Asian">Asian</option>
+              <option value="Mediterranean">Mediterranean</option>
+              <option value="Vegetarian">Vegetarian</option>
+              <option value="Vegan">Vegan</option>
+              <option value="Holidays">Holidays</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <!-- Rating -->
+          <div class="field field-half">
+            <label>
+              <i class="fas fa-star"></i>
+              Rating
+            </label>
+            <div class="rating-container">
+              <input type="hidden" id="ratingValue" name="rating" value="0" />
+              <div class="stars" role="radiogroup" aria-label="Rate this recipe out of 5 stars">
+                <input type="radio" id="star5" name="ratingInput" value="5" />
+                <label for="star5" title="5 stars - Excellent">★</label>
+                <input type="radio" id="star4" name="ratingInput" value="4" />
+                <label for="star4" title="4 stars - Very Good">★</label>
+                <input type="radio" id="star3" name="ratingInput" value="3" />
+                <label for="star3" title="3 stars - Good">★</label>
+                <input type="radio" id="star2" name="ratingInput" value="2" />
+                <label for="star2" title="2 stars - Fair">★</label>
+                <input type="radio" id="star1" name="ratingInput" value="1" />
+                <label for="star1" title="1 star - Poor">★</label>
+                <span class="stars-text" id="starsText">No rating</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Additional Info Row -->
+        <div class="field-row three-columns">
+          <!-- Cooking Time -->
+          <div class="field field-third">
+            <label for="cookingTime">
+              <i class="fas fa-clock"></i>
+              Cooking Time
+            </label>
+            <div class="input-with-unit">
+              <input id="cookingTime" name="cookingTime" type="number" min="1" placeholder="30" />
+              <span class="input-unit">minutes</span>
+            </div>
+          </div>
+
+          <!-- Prep Time -->
+          <div class="field field-third">
+            <label for="prepTime">
+              <i class="fas fa-hourglass-half"></i>
+              Prep Time
+            </label>
+            <div class="input-with-unit">
+              <input id="prepTime" name="prepTime" type="number" min="1" placeholder="15" />
+              <span class="input-unit">minutes</span>
+            </div>
+          </div>
+
+          <!-- Servings -->
+          <div class="field field-third">
+            <label for="servings">
+              <i class="fas fa-users"></i>
+              Servings
+            </label>
+            <div class="input-with-unit">
+              <input id="servings" name="servings" type="number" min="1" placeholder="4" />
+              <span class="input-unit">people</span>
+            </div>
+          </div>
         </div>
 
         <!-- Recipe Image -->
         <div class="field">
-          <label for="recipeImage">Recipe Image</label>
+          <label for="recipeImage">
+            <i class="fas fa-image"></i>
+            Recipe Image
+          </label>
 
           <div class="upload-area" id="uploadArea">
             <div class="upload-center">
-              <div class="upload-text">[IMAGE UPLOAD AREA]</div>
-
+              <div class="upload-icon">
+                <i class="fas fa-cloud-upload-alt"></i>
+              </div>
+              <div class="upload-text">
+                <strong>Click to upload</strong> or drag and drop
+              </div>
+              <div class="upload-hint">PNG, JPG, GIF up to 10MB</div>
               <!-- IMPORTANT: name="image" must match upload.single("image") -->
               <input class="file-input" id="recipeImage" name="image" type="file" accept="image/*" />
-              <button class="choose-btn" type="button" id="chooseFileBtn">Choose File</button>
+              <button class="choose-btn" type="button" id="chooseFileBtn">
+                <i class="fas fa-folder-open"></i>
+                Choose File
+              </button>
             </div>
           </div>
 
           <div class="preview" id="imagePreviewWrap" style="display:none;">
+            <div class="preview-header">
+              <span>Image Preview</span>
+              <button type="button" class="preview-remove" id="removeImageBtn" aria-label="Remove image">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
             <img id="imagePreview" alt="Recipe preview" />
           </div>
         </div>
 
         <!-- Ingredients header -->
         <div class="ingredients-head">
-          <label class="ingredients-label">Ingredients</label>
-          <button class="square-btn" type="button" id="addIngredientBtn" aria-label="Add ingredient">+</button>
+          <label class="ingredients-label">
+            <i class="fas fa-list-ul"></i>
+            Ingredients
+          </label>
+          <button class="square-btn square-btn-primary" type="button" id="addIngredientBtn" aria-label="Add ingredient" title="Add ingredient">
+            <i class="fas fa-plus"></i>
+          </button>
         </div>
 
         <!-- Ingredients list -->
         <div class="ingredients-list" id="ingredientsList">
           <div class="ingredient-row">
-            <input name="ingredients[]" type="text" placeholder="Ingredient 1" />
-            <button class="square-btn" type="button" aria-label="Remove ingredient">−</button>
+            <input name="ingredients[]" type="text" placeholder="e.g., 2 cups all-purpose flour" />
+            <button class="square-btn square-btn-danger" type="button" aria-label="Remove ingredient" title="Remove ingredient">
+              <i class="fas fa-minus"></i>
+            </button>
           </div>
+        </div>
+
+        <!-- Recipe Instructions/Steps -->
+        <div class="field">
+          <div class="instructions-head">
+            <label class="instructions-label">
+              <i class="fas fa-list-ol"></i>
+              Cooking Instructions
+            </label>
+            <button class="square-btn square-btn-primary" type="button" id="addStepBtn" aria-label="Add step" title="Add step">
+              <i class="fas fa-plus"></i>
+            </button>
+          </div>
+          <div class="instructions-list" id="instructionsList">
+            <div class="instruction-row">
+              <div class="step-number">1</div>
+              <textarea name="instructions[]" placeholder="Describe step 1... e.g., Preheat oven to 350°F" rows="2"></textarea>
+              <button class="square-btn square-btn-danger" type="button" aria-label="Remove step" title="Remove step">
+                <i class="fas fa-minus"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Difficulty Level -->
+        <div class="field">
+          <label>
+            <i class="fas fa-signal"></i>
+            Difficulty Level
+          </label>
+          <div class="difficulty-options">
+            <input type="radio" id="difficulty-easy" name="difficulty" value="Easy" />
+            <label for="difficulty-easy" class="difficulty-option difficulty-easy">
+              <i class="fas fa-circle"></i>
+              <span>Easy</span>
+            </label>
+            <input type="radio" id="difficulty-medium" name="difficulty" value="Medium" checked />
+            <label for="difficulty-medium" class="difficulty-option difficulty-medium">
+              <i class="fas fa-circle"></i>
+              <span>Medium</span>
+            </label>
+            <input type="radio" id="difficulty-hard" name="difficulty" value="Hard" />
+            <label for="difficulty-hard" class="difficulty-option difficulty-hard">
+              <i class="fas fa-circle"></i>
+              <span>Hard</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Dietary Information -->
+        <div class="field">
+          <label>
+            <i class="fas fa-leaf"></i>
+            Dietary Information
+          </label>
+          <div class="dietary-options">
+            <label class="dietary-checkbox">
+              <input type="checkbox" name="dietary[]" value="Vegetarian" />
+              <span class="dietary-badge dietary-vegetarian">
+                <i class="fas fa-carrot"></i>
+                Vegetarian
+              </span>
+            </label>
+            <label class="dietary-checkbox">
+              <input type="checkbox" name="dietary[]" value="Vegan" />
+              <span class="dietary-badge dietary-vegan">
+                <i class="fas fa-seedling"></i>
+                Vegan
+              </span>
+            </label>
+            <label class="dietary-checkbox">
+              <input type="checkbox" name="dietary[]" value="Gluten-Free" />
+              <span class="dietary-badge dietary-gluten">
+                <i class="fas fa-wheat"></i>
+                Gluten-Free
+              </span>
+            </label>
+            <label class="dietary-checkbox">
+              <input type="checkbox" name="dietary[]" value="Dairy-Free" />
+              <span class="dietary-badge dietary-dairy">
+                <i class="fas fa-cheese"></i>
+                Dairy-Free
+              </span>
+            </label>
+            <label class="dietary-checkbox">
+              <input type="checkbox" name="dietary[]" value="Nut-Free" />
+              <span class="dietary-badge dietary-nut">
+                <i class="fas fa-peanut"></i>
+                Nut-Free
+              </span>
+            </label>
+            <label class="dietary-checkbox">
+              <input type="checkbox" name="dietary[]" value="Keto" />
+              <span class="dietary-badge dietary-keto">
+                <i class="fas fa-fire"></i>
+                Keto
+              </span>
+            </label>
+            <label class="dietary-checkbox">
+              <input type="checkbox" name="dietary[]" value="Low-Carb" />
+              <span class="dietary-badge dietary-lowcarb">
+                <i class="fas fa-chart-line"></i>
+                Low-Carb
+              </span>
+            </label>
+            <label class="dietary-checkbox">
+              <input type="checkbox" name="dietary[]" value="Low-Calorie" />
+              <span class="dietary-badge dietary-calorie">
+                <i class="fas fa-weight"></i>
+                Low-Calorie
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Tags/Keywords -->
+        <div class="field">
+          <label for="tags">
+            <i class="fas fa-tags"></i>
+            Tags / Keywords
+          </label>
+          <div class="tags-container">
+            <input type="text" id="tagsInput" placeholder="Type a tag and press Enter (e.g., quick, spicy, comfort-food)" />
+            <div class="tags-list" id="tagsList"></div>
+            <div class="field-hint">Add tags to make your recipe easier to find</div>
+          </div>
+        </div>
+
+        <!-- Recipe Notes/Tips -->
+        <div class="field">
+          <label for="notes">
+            <i class="fas fa-lightbulb"></i>
+            Recipe Notes & Tips
+          </label>
+          <textarea id="notes" name="notes" placeholder="Share helpful tips, variations, or substitutions... (optional)" rows="4"></textarea>
+          <div class="field-hint">Optional: Add cooking tips, serving suggestions, or recipe variations</div>
         </div>
 
         <!-- Actions -->
         <div class="actions">
-          <button class="btn" type="button" id="cancelBtn">Cancel</button>
-          <button class="btn btn-dark" type="submit">Save Recipe</button>
+          <button class="btn btn-secondary" type="button" id="cancelBtn">
+            <i class="fas fa-times"></i>
+            Cancel
+          </button>
+          <button class="btn btn-primary" type="submit" id="submitBtn">
+            <i class="fas fa-save"></i>
+            <span class="btn-text">Save Recipe</span>
+            <span class="btn-loading" style="display: none;">
+              <i class="fas fa-spinner fa-spin"></i>
+              Saving...
+            </span>
+          </button>
         </div>
       </form>
     </section>

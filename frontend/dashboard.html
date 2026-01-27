@@ -6,6 +6,7 @@
   <title>Dashboard | Recipe Management System</title>
 
   <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/activity-feed.css" />
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <link rel="icon" type="image/x-icon" href="images/favicon.ico">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -46,10 +47,30 @@
 
 </div>
 
+<!-- Activity Feed Widget -->
+<div class="activity-feed-container" id="activityFeedContainer">
+  <div class="activity-feed-header" id="activityFeedHeader">
+    <h3>
+      <span class="feed-icon">📋</span>
+      <span class="feed-title">Activity Feed</span>
+      <span class="live-indicator"></span>
+    </h3>
+    <button class="activity-feed-toggle" id="activityFeedToggle" aria-label="Toggle activity feed">
+      ▼
+    </button>
+  </div>
+  <div class="activity-feed-body" id="activityFeed">
+    <div class="activity-empty">
+      <p>Loading activities...</p>
+    </div>
+  </div>
+</div>
+
 <!-- Include the global script -->
 <script src="js/authCheck.js"></script>
 <script src="js/dashboard.js"></script>
 <script src="js/filterCate.js"></script>
+<script src="js/activity-feed.js"></script>
 
 <script>
   // Update greeting
@@ -81,6 +102,38 @@
       btn.classList.add("active");
     });
   });
+
+  // Activity feed toggle
+  const activityFeedContainer = document.getElementById("activityFeedContainer");
+  const activityFeedHeader = document.getElementById("activityFeedHeader");
+  const activityFeedToggle = document.getElementById("activityFeedToggle");
+  
+  if (activityFeedHeader && activityFeedToggle) {
+    activityFeedHeader.addEventListener("click", () => {
+      activityFeedContainer.classList.toggle("collapsed");
+    });
+  }
+
+  // Refresh activity feed when page becomes visible (e.g., after redirect from recipe creation)
+  if (window.activityFeed) {
+    // Check if we're returning from recipe creation
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('view')) {
+      // Refresh activity feed after a short delay to ensure backend has processed
+      setTimeout(() => {
+        if (window.activityFeed) {
+          window.activityFeed.refresh();
+        }
+      }, 1000);
+    }
+    
+    // Also refresh on focus
+    window.addEventListener("focus", () => {
+      if (window.activityFeed) {
+        window.activityFeed.refresh();
+      }
+    });
+  }
 </script>
 
 </body>

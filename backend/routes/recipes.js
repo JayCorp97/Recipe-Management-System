@@ -64,21 +64,33 @@ router.post("/", auth, userOrAdmin, upload.single("image"), async (req, res) => 
       ? `/uploads/${req.file.filename}`
       : (req.body.imageUrl || "").trim();
 
-    // Process new fields
+    // Process new fields - filter null/undefined before converting to string
     const ingredients = Array.isArray(req.body.ingredients) 
-      ? req.body.ingredients.map(i => String(i).trim()).filter(i => i.length > 0)
+      ? req.body.ingredients
+          .filter(i => i != null && i !== undefined) // Filter null/undefined first
+          .map(i => String(i).trim())
+          .filter(i => i.length > 0)
       : [];
     
     const instructions = Array.isArray(req.body.instructions)
-      ? req.body.instructions.map(i => String(i).trim()).filter(i => i.length > 0)
+      ? req.body.instructions
+          .filter(i => i != null && i !== undefined)
+          .map(i => String(i).trim())
+          .filter(i => i.length > 0)
       : [];
 
     const dietary = Array.isArray(req.body.dietary)
-      ? req.body.dietary.map(d => String(d).trim()).filter(d => d.length > 0)
+      ? req.body.dietary
+          .filter(d => d != null && d !== undefined)
+          .map(d => String(d).trim())
+          .filter(d => d.length > 0)
       : [];
 
     const tags = Array.isArray(req.body.tags)
-      ? req.body.tags.map(t => String(t).trim().toLowerCase()).filter(t => t.length > 0)
+      ? req.body.tags
+          .filter(t => t != null && t !== undefined)
+          .map(t => String(t).trim().toLowerCase())
+          .filter(t => t.length > 0)
       : [];
 
     const difficulty = ["Easy", "Medium", "Hard"].includes(req.body.difficulty)

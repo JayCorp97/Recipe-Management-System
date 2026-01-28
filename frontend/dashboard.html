@@ -14,6 +14,8 @@
   <link rel="icon" type="image/x-icon" href="images/favicon.ico">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/solid.min.css" integrity="sha512-EHa6vH03/Ty92WahM0/tet1Qicl76zihDCkBnFhN3kFGQkC+mc86d7V+6y2ypiLbk3h0beZAGdUpzfMcb06cMg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <!-- Socket.IO Client -->
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 </head>
 
 <body>
@@ -139,10 +141,22 @@
     });
     
     // Toggle on header click (but not when clicking the button)
+    // Only works when NOT collapsed (when collapsed, container handles it)
     activityFeedHeader.addEventListener("click", function(e) {
-      // Only toggle if not clicking the button or its children
-      if (e.target !== activityFeedToggle && !activityFeedToggle.contains(e.target)) {
+      if (!activityFeedContainer.classList.contains("collapsed")) {
+        // Only toggle if not clicking the button or its children
+        if (e.target !== activityFeedToggle && !activityFeedToggle.contains(e.target)) {
+          toggleActivityFeed();
+        }
+      }
+    });
+    
+    // When collapsed, make the entire container clickable to expand
+    activityFeedContainer.addEventListener("click", function(e) {
+      if (activityFeedContainer.classList.contains("collapsed")) {
+        // When collapsed, clicking anywhere expands it
         toggleActivityFeed();
+        e.stopPropagation();
       }
     });
     

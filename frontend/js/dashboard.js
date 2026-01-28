@@ -35,9 +35,39 @@ async function loadPage(page, btnId) {
     // Inject HTML first
     mainContent.innerHTML = html;
 
-    // ⚡ Call page-specific initializers AFTER HTML is injected
-    if (page === "my-recipes.html" && window.loadMyRecipes) {
-      await window.loadMyRecipes();
+    // Extract and execute script tags from the loaded HTML
+    const scriptTags = mainContent.querySelectorAll("script");
+    for (const script of scriptTags) {
+      if (script.src) {
+        // External script - load it
+        await new Promise((resolve, reject) => {
+          const newScript = document.createElement("script");
+          newScript.src = script.src;
+          newScript.onload = resolve;
+          newScript.onerror = reject;
+          document.head.appendChild(newScript);
+        });
+      } else {
+        // Inline script - execute it
+        const newScript = document.createElement("script");
+        newScript.textContent = script.textContent;
+        document.head.appendChild(newScript);
+        document.head.removeChild(newScript);
+      }
+      // Remove the original script tag from mainContent
+      script.remove();
+    }
+
+    // ⚡ Call page-specific initializers AFTER HTML is injected and scripts are loaded
+    if (page === "my-recipes.html") {
+      // Wait a bit for scripts to initialize
+      await new Promise(resolve => setTimeout(resolve, 50));
+      // Try both function names for compatibility
+      if (window.renderMyRecipes) {
+        await window.renderMyRecipes();
+      } else if (window.loadMyRecipes) {
+        await window.loadMyRecipes();
+      }
     }
 
     if (page === "recipes.html") {
@@ -105,20 +135,43 @@ mainContent.addEventListener("click", async (e) => {
   if (editBtn) {
     const recipeId = editBtn.dataset.id;
     if (!recipeId) return;
-    window.location.href = `/pages/view-edit-recipe.html?id=${encodeURIComponent(recipeId)}`;
+    // Go directly to add-recipe page in edit mode
+    window.location.href = `/pages/add-recipe.html?id=${encodeURIComponent(recipeId)}`;
     return;
   }
 
   // DELETE button
   const deleteBtn = e.target.closest(".delete-btn");
-  if (deleteBtn && window.deleteRecipeById && window.loadMyRecipes) {
+  if (deleteBtn) {
     const recipeId = deleteBtn.dataset.id;
     if (!recipeId) return;
     if (!confirm("Delete this recipe?")) return;
 
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Please log in to delete recipes.");
+      return;
+    }
+
     try {
-      await window.deleteRecipeById(recipeId);
-      await window.loadMyRecipes();
+      const res = await fetch(`/api/recipes/${encodeURIComponent(recipeId)}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to delete recipe");
+      }
+
+      // Refresh the recipes list
+      if (window.loadMyRecipes) {
+        await window.loadMyRecipes();
+      } else if (window.renderMyRecipes) {
+        await window.renderMyRecipes();
+      }
     } catch (err) {
       alert(err.message || "Failed to delete recipe");
     }
@@ -130,11 +183,20 @@ mainContent.addEventListener("click", async (e) => {
    Default page load
 =========================== */
 document.addEventListener("DOMContentLoaded", () => {
-  loadPage("recipes.html", "RecipesBtn");
+  // Check for URL parameter to determine which page to load
+  const urlParams = new URLSearchParams(window.location.search);
+  const view = urlParams.get("view");
+  
+  if (view === "my-recipes") {
+    loadPage("my-recipes.html", "myRecipesBtn");
+  } else {
+    loadPage("recipes.html", "RecipesBtn");
+  }
 });
 
 /* ===========================
    My Recipes Page
+=========================== */
 async function loadMyRecipes() {
   const grid = document.getElementById("recipesGrid");
   if (!grid) return;
@@ -171,12 +233,12 @@ async function loadMyRecipes() {
           data-date="${r.createdAt}">
 
           <div class="image-placeholder">
-            ${r.imageUrl ? `<img src="${r.imageUrl}" alt="${r.title}" />` : "[IMAGE]"}
+            ${r.imageUrl ? `<img src="${r.imageUrl}" alt="${escapeHtml(r.title)}" />` : "[IMAGE]"}
           </div>
 
           <div class="content">
             <div class="title-wrapper">
-              <div class="title">${r.title}</div>
+              <div class="title">${escapeHtml(r.title)}</div>
             </div>
 
             <div class="likes-wrapper">
@@ -186,6 +248,8 @@ async function loadMyRecipes() {
 
             <div class="actions">
               <button class="open-btn" data-id="${r._id}">Open</button>
+              <button class="edit-btn" data-id="${r._id}">Edit</button>
+              <button class="delete-btn" data-id="${r._id}">Delete</button>
             </div>
           </div>
         </div>

@@ -7,11 +7,14 @@ class ActivityFeed {
       return;
     }
 
-    this.pollInterval = options.pollInterval || 5000; // 5 seconds default
+    this.pollInterval = options.pollInterval || 5000; // 5 seconds default (fallback)
     this.maxItems = options.maxItems || 20;
     this.displayDurationMs = options.displayDurationMs ?? 20000; // 20 seconds, then remove
     this.pollTimer = null;
     this.lastUpdateTime = null;
+    this.socket = null;
+    this.useSocket = false;
+    this.activities = []; // Store current activities for filtering
   }
 
   async fetchActivities() {
@@ -88,12 +91,24 @@ class ActivityFeed {
       return;
     }
     
-    const fetched = await this.fetchActivities();
-    const now = Date.now();
-    const activities = fetched.filter((a) => {
-      const age = now - new Date(a.createdAt).getTime();
-      return age >= 0 && age < this.displayDurationMs;
-    });
+    // If using socket, filter stored activities; otherwise fetch from API
+    let activities;
+    if (this.useSocket && this.activities.length > 0) {
+      const now = Date.now();
+      activities = this.activities.filter((a) => {
+        const age = now - new Date(a.createdAt).getTime();
+        return age >= 0 && age < this.displayDurationMs;
+      });
+    } else {
+      const fetched = await this.fetchActivities();
+      const now = Date.now();
+      activities = fetched.filter((a) => {
+        const age = now - new Date(a.createdAt).getTime();
+        return age >= 0 && age < this.displayDurationMs;
+      });
+      // Store activities for socket mode
+      this.activities = activities;
+    }
 
     if (activities.length === 0) {
       this.container.innerHTML = `
@@ -104,6 +119,9 @@ class ActivityFeed {
       `;
       return;
     }
+
+    // Sort by createdAt descending (newest first)
+    activities.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     this.container.innerHTML = activities
       .map(activity => {
@@ -130,12 +148,99 @@ class ActivityFeed {
     });
   }
 
+  // Add new activity from socket event
+  addActivity(activity) {
+    // Validate activity
+    if (!activity.userName || !activity.recipeTitle || !activity.action) {
+      console.warn("Invalid activity data from socket:", activity);
+      return;
+    }
+
+    // Check if activity already exists (prevent duplicates)
+    const exists = this.activities.some(a => a._id === activity._id);
+    if (exists) {
+      return;
+    }
+
+    // Add to beginning of array
+    this.activities.unshift(activity);
+    
+    // Keep only maxItems
+    if (this.activities.length > this.maxItems) {
+      this.activities = this.activities.slice(0, this.maxItems);
+    }
+
+    // Re-render
+    this.render();
+  }
+
   // Force refresh method
   async refresh() {
     await this.render();
   }
 
+  // Initialize Socket.IO connection
+  initSocket() {
+    if (typeof io === 'undefined') {
+      console.warn("Socket.IO not available, falling back to polling");
+      return false;
+    }
+
+    try {
+      // Connect to Socket.IO server
+      this.socket = io({
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionAttempts: 5
+      });
+
+      this.socket.on('connect', () => {
+        console.log('✅ Connected to Socket.IO server');
+        this.useSocket = true;
+        // Join activity feed room
+        this.socket.emit('join', 'activity-feed');
+        // Initial fetch to populate activities
+        this.fetchActivities().then(fetched => {
+          this.activities = fetched;
+          this.render();
+        });
+      });
+
+      this.socket.on('new-activity', (activity) => {
+        console.log('📡 Received new activity via Socket.IO:', activity);
+        this.addActivity(activity);
+      });
+
+      this.socket.on('disconnect', () => {
+        console.log('❌ Disconnected from Socket.IO server, falling back to polling');
+        this.useSocket = false;
+        this.startPolling();
+      });
+
+      this.socket.on('connect_error', (error) => {
+        console.warn('⚠️ Socket.IO connection error, falling back to polling:', error);
+        this.useSocket = false;
+        this.startPolling();
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Error initializing Socket.IO:', error);
+      return false;
+    }
+  }
+
   startPolling() {
+    // Stop socket if it's running
+    if (this.socket) {
+      this.socket.disconnect();
+      this.socket = null;
+    }
+
+    // Stop existing polling if any
+    this.stopPolling();
+
     // Initial render
     this.render();
     
@@ -151,6 +256,15 @@ class ActivityFeed {
       this.pollTimer = null;
     }
   }
+
+  // Cleanup method
+  destroy() {
+    this.stopPolling();
+    if (this.socket) {
+      this.socket.disconnect();
+      this.socket = null;
+    }
+  }
 }
 
 // Initialize activity feed when DOM is ready
@@ -164,23 +278,38 @@ function initActivityFeed() {
   const feedContainer = document.getElementById("activityFeed");
   if (feedContainer) {
     window.activityFeed = new ActivityFeed("activityFeed", {
-      pollInterval: 5000, // Poll every 5 seconds
+      pollInterval: 5000, // Poll every 5 seconds (fallback)
       maxItems: 20,
       displayDurationMs: 20000 // Show each message for 20 seconds, then remove
     });
-    window.activityFeed.startPolling();
+    
+    // Try to initialize Socket.IO, fallback to polling if it fails
+    const socketInitialized = window.activityFeed.initSocket();
+    if (!socketInitialized) {
+      console.log("Using polling mode for activity feed");
+      window.activityFeed.startPolling();
+    }
     
     // Refresh immediately when page becomes visible (e.g., after redirect)
     document.addEventListener("visibilitychange", () => {
       if (!document.hidden && window.activityFeed) {
-        window.activityFeed.refresh();
+        if (!window.activityFeed.useSocket) {
+          window.activityFeed.refresh();
+        }
       }
     });
     
-    // Also refresh when page loads
+    // Also refresh when page loads (only in polling mode)
     window.addEventListener("load", () => {
-      if (window.activityFeed) {
+      if (window.activityFeed && !window.activityFeed.useSocket) {
         setTimeout(() => window.activityFeed.refresh(), 500);
+      }
+    });
+
+    // Cleanup on page unload
+    window.addEventListener("beforeunload", () => {
+      if (window.activityFeed) {
+        window.activityFeed.destroy();
       }
     });
   } else {

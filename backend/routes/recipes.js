@@ -8,6 +8,7 @@ const Activity = require("../models/Activity");
 const User = require("../models/User");
 const auth = require("../middleware/authMiddleware");
 const { userOrAdmin, adminOnly } = require("../middleware/roleMiddleware");
+const { emitActivity } = require("../src/socket");
 
 const router = express.Router();
 
@@ -152,9 +153,18 @@ router.post("/", auth, userOrAdmin, upload.single("image"), async (req, res) => 
         console.log("Activity data:", JSON.stringify(activityData, null, 2));
         
         const activity = await Activity.create(activityData);
-        console.log(`✅ Activity logged successfully: ${userName} created "${doc.title}" (Activity ID: ${activity._id})`);
+        console.log(` Activity logged successfully: ${userName} created "${doc.title}" (Activity ID: ${activity._id})`);
+        
+        // Emit socket event for real-time update
+        emitActivity({
+          _id: activity._id,
+          userName: activityData.userName,
+          action: activityData.action,
+          recipeTitle: activityData.recipeTitle,
+          createdAt: activity.createdAt
+        });
       } else {
-        console.warn(`❌ User not found for userId: ${req.userId} (searched as: ${userIdObj})`);
+        console.warn(` User not found for userId: ${req.userId} (searched as: ${userIdObj})`);
         // Try to find user by string ID as fallback
         const userByString = await User.findById(String(req.userId));
         if (userByString) {
@@ -163,7 +173,7 @@ router.post("/", auth, userOrAdmin, upload.single("image"), async (req, res) => 
       }
     } catch (activityErr) {
       // Don't fail recipe creation if activity logging fails
-      console.error("❌ Failed to log activity:", activityErr);
+      console.error(" Failed to log activity:", activityErr);
       console.error("Activity error details:", {
         message: activityErr.message,
         stack: activityErr.stack,
@@ -213,11 +223,15 @@ router.get("/mine", auth, userOrAdmin, async (req, res) => {
   }
 });
 
-// GET /api/recipes/:id - get single recipe by ID
+// GET /api/recipes/:id - get single recipe by ID (owner only)
 router.get("/:id", auth, async (req, res) => {
   try {
     const recipe = await Recipe.findById(req.params.id);
     if (!recipe) return res.status(404).json({ message: "Recipe not found" });
+
+    if (String(recipe.userId) !== String(req.userId)) {
+      return res.status(403).json({ message: "Not allowed" });
+    }
 
     return res.json({ recipe });
   } catch (err) {
@@ -230,6 +244,140 @@ router.get("/:id", auth, async (req, res) => {
   }
 });
 
+// PUT /api/recipes/:id - update recipe (owner only)
+router.put("/:id", auth, userOrAdmin, upload.single("image"), async (req, res) => {
+  try {
+    const recipe = await Recipe.findById(req.params.id);
+    if (!recipe) return res.status(404).json({ message: "Recipe not found" });
+
+    if (String(recipe.userId) !== String(req.userId)) {
+      return res.status(403).json({ message: "Not allowed" });
+    }
+
+    const title = req.body.title != null ? String(req.body.title).trim() : recipe.title;
+    const description = req.body.description != null ? String(req.body.description).trim() : recipe.desc;
+    if (!title) {
+      return res.status(400).json({ message: "Recipe title is required." });
+    }
+    if (!description) {
+      return res.status(400).json({ message: "Recipe description is required." });
+    }
+
+    // Duplicate check: same user, same normalized title, exclude current recipe
+    const normalizedTitle = title.toLowerCase();
+    const existingRecipe = await Recipe.findOne({
+      userId: req.userId,
+      _id: { $ne: recipe._id },
+      title: { $regex: new RegExp(`^${normalizedTitle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i") },
+    });
+    if (existingRecipe) {
+      return res.status(409).json({
+        message: `You already have a recipe with the title "${existingRecipe.title}". Please use a different title.`,
+        duplicate: true,
+        existingTitle: existingRecipe.title,
+      });
+    }
+
+    const finalImageUrl = req.file
+      ? `/uploads/${req.file.filename}`
+      : (req.body.imageUrl != null && String(req.body.imageUrl).trim())
+        ? String(req.body.imageUrl).trim()
+        : recipe.imageUrl || "";
+
+    const ingredients = Array.isArray(req.body.ingredients)
+      ? req.body.ingredients
+          .filter((i) => i != null && i !== undefined)
+          .map((i) => String(i).trim())
+          .filter((i) => i.length > 0)
+      : recipe.ingredients;
+    const instructions = Array.isArray(req.body.instructions)
+      ? req.body.instructions
+          .filter((i) => i != null && i !== undefined)
+          .map((i) => String(i).trim())
+          .filter((i) => i.length > 0)
+      : recipe.instructions;
+    const dietary = Array.isArray(req.body.dietary)
+      ? req.body.dietary
+          .filter((d) => d != null && d !== undefined)
+          .map((d) => String(d).trim())
+          .filter((d) => d.length > 0)
+      : recipe.dietary;
+    const tags = Array.isArray(req.body.tags)
+      ? req.body.tags
+          .filter((t) => t != null && t !== undefined)
+          .map((t) => String(t).trim().toLowerCase())
+          .filter((t) => t.length > 0)
+      : recipe.tags;
+    const difficulty = ["Easy", "Medium", "Hard"].includes(req.body.difficulty)
+      ? req.body.difficulty
+      : recipe.difficulty || "Medium";
+    const notes = req.body.notes != null ? String(req.body.notes).trim() : recipe.notes || "";
+    const category = req.body.category != null ? String(req.body.category).trim() : recipe.category || "Uncategorised";
+    const rating = Number.isFinite(Number(req.body.rating)) ? Number(req.body.rating) : recipe.rating;
+    const cookingTime = Number.isFinite(Number(req.body.cookingTime)) ? Number(req.body.cookingTime) : recipe.cookingTime;
+    const prepTime = Number.isFinite(Number(req.body.prepTime)) ? Number(req.body.prepTime) : recipe.prepTime;
+    const servings = Number.isFinite(Number(req.body.servings)) ? Number(req.body.servings) : recipe.servings;
+
+    recipe.title = title;
+    recipe.desc = description;
+    recipe.imageUrl = finalImageUrl;
+    recipe.ingredients = ingredients;
+    recipe.instructions = instructions;
+    recipe.dietary = dietary;
+    recipe.tags = tags;
+    recipe.difficulty = difficulty;
+    recipe.notes = notes;
+    recipe.category = category;
+    recipe.rating = rating;
+    recipe.cookingTime = cookingTime;
+    recipe.prepTime = prepTime;
+    recipe.servings = servings;
+    await recipe.save();
+
+    try {
+      let userIdObj;
+      try {
+        userIdObj = mongoose.Types.ObjectId.isValid(req.userId)
+          ? new mongoose.Types.ObjectId(req.userId)
+          : req.userId;
+      } catch (e) {
+        userIdObj = req.userId;
+      }
+      const user = await User.findById(userIdObj);
+      if (user) {
+        const userName = `${user.f_name} ${user.l_name}`.trim();
+        const activity = await Activity.create({
+          userId: userIdObj,
+          userName,
+          action: "updated",
+          recipeId: recipe._id,
+          recipeTitle: String(recipe.title).trim(),
+        });
+        console.log(` Activity logged: ${userName} updated "${recipe.title}"`);
+        
+        // Emit socket event for real-time update
+        emitActivity({
+          _id: activity._id,
+          userName,
+          action: "updated",
+          recipeTitle: String(recipe.title).trim(),
+          createdAt: activity.createdAt
+        });
+      }
+    } catch (activityErr) {
+      console.error(" Failed to log update activity:", activityErr);
+    }
+
+    return res.json({ message: "Recipe updated", recipe });
+  } catch (err) {
+    console.error("Update recipe error:", err);
+    return res.status(500).json({
+      message: "Server error updating recipe",
+      error: err?.message,
+      name: err?.name,
+    });
+  }
+});
 
 // DELETE /api/recipes/:id - protected + role-based access + ownership check
 router.delete("/:id", auth, userOrAdmin, async (req, res) => {
@@ -261,17 +409,26 @@ router.delete("/:id", auth, userOrAdmin, async (req, res) => {
       const user = await User.findById(userIdObj);
       if (user) {
         const userName = `${user.f_name} ${user.l_name}`.trim();
-        await Activity.create({
+        const activity = await Activity.create({
           userId: userIdObj,
           userName,
           action: "deleted",
           recipeId: recipeId,
           recipeTitle: recipeTitle,
         });
-        console.log(`✅ Activity logged: ${userName} deleted "${recipeTitle}"`);
+        console.log(` Activity logged: ${userName} deleted "${recipeTitle}"`);
+        
+        // Emit socket event for real-time update
+        emitActivity({
+          _id: activity._id,
+          userName,
+          action: "deleted",
+          recipeTitle: recipeTitle,
+          createdAt: activity.createdAt
+        });
       }
     } catch (activityErr) {
-      console.error("❌ Failed to log delete activity:", activityErr);
+      console.error(" Failed to log delete activity:", activityErr);
     }
 
     return res.json({ message: "Recipe deleted" });
@@ -336,17 +493,26 @@ router.delete("/admin/:id", auth, adminOnly, async (req, res) => {
       const user = await User.findById(userIdObj);
       if (user) {
         const userName = `${user.f_name} ${user.l_name}`.trim();
-        await Activity.create({
+        const activity = await Activity.create({
           userId: userIdObj,
           userName,
           action: "deleted",
           recipeId: recipeId,
           recipeTitle: recipeTitle,
         });
-        console.log(`✅ Activity logged: ${userName} (admin) deleted "${recipeTitle}"`);
+        console.log(` Activity logged: ${userName} (admin) deleted "${recipeTitle}"`);
+        
+        // Emit socket event for real-time update
+        emitActivity({
+          _id: activity._id,
+          userName,
+          action: "deleted",
+          recipeTitle: recipeTitle,
+          createdAt: activity.createdAt
+        });
       }
     } catch (activityErr) {
-      console.error("❌ Failed to log admin delete activity:", activityErr);
+      console.error(" Failed to log admin delete activity:", activityErr);
     }
 
     return res.json({ message: "Recipe deleted by admin" });

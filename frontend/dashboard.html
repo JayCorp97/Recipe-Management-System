@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="css/dashboard.css" />
   <link rel="stylesheet" href="css/settings.css" />
   <link rel="stylesheet" href="css/recipe-details.css" />
+  <link rel="stylesheet" href="css/activity-feed.css" />
 
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <link rel="icon" type="image/x-icon" href="images/favicon.ico">
@@ -71,6 +72,7 @@
 
 <!-- Include the global script -->
 <script src="js/authCheck.js"></script>
+<script src="js/activity-feed.js"></script>
 <script src="js/dashboard.js"></script>
 <script src="js/filterCate.js"></script>
 <script src="js/settings.js"></script>
@@ -110,15 +112,43 @@
   });
 
   // Activity feed toggle
-  const activityFeedContainer = document.getElementById("activityFeedContainer");
-  const activityFeedHeader = document.getElementById("activityFeedHeader");
-  const activityFeedToggle = document.getElementById("activityFeedToggle");
-  
-  if (activityFeedHeader && activityFeedToggle) {
-    activityFeedHeader.addEventListener("click", () => {
+  (function() {
+    const activityFeedContainer = document.getElementById("activityFeedContainer");
+    const activityFeedHeader = document.getElementById("activityFeedHeader");
+    const activityFeedToggle = document.getElementById("activityFeedToggle");
+    
+    if (!activityFeedContainer || !activityFeedHeader || !activityFeedToggle) {
+      console.warn("Activity feed elements not found");
+      return;
+    }
+    
+    function updateToggleIcon() {
+      const isCollapsed = activityFeedContainer.classList.contains("collapsed");
+      activityFeedToggle.textContent = isCollapsed ? "▲" : "▼";
+    }
+    
+    function toggleActivityFeed() {
       activityFeedContainer.classList.toggle("collapsed");
+      updateToggleIcon();
+    }
+    
+    // Toggle on button click
+    activityFeedToggle.addEventListener("click", function(e) {
+      e.stopPropagation();
+      toggleActivityFeed();
     });
-  }
+    
+    // Toggle on header click (but not when clicking the button)
+    activityFeedHeader.addEventListener("click", function(e) {
+      // Only toggle if not clicking the button or its children
+      if (e.target !== activityFeedToggle && !activityFeedToggle.contains(e.target)) {
+        toggleActivityFeed();
+      }
+    });
+    
+    // Initialize icon on page load
+    updateToggleIcon();
+  })();
 
   // Refresh activity feed when page becomes visible (e.g., after redirect from recipe creation)
   if (window.activityFeed) {

@@ -75,34 +75,46 @@ async function loadRecipeDetails() {
     const { recipe } = await res.json();
     if (!recipe) return;
 
-    // Fill DOM elements
+    // Fill DOM elements (supports inputs, spans, p, div)
     const setValue = (id, value, isCheckbox = false) => {
       const el = document.getElementById(id);
-      if (el) isCheckbox ? el.checked = value : el.value = value;
+      if (!el) return;
+      if (isCheckbox) {
+        el.checked = value;
+      } else if (["SPAN", "DIV", "P"].includes(el.tagName)) {
+        el.textContent = value;
+      } else {
+        el.value = value;
+      }
     };
 
+    // Left side
     setValue("title", recipe.title || "");
     setValue("category", recipe.category || "");
     setValue("likeCount", recipe.is_like || 0);
     setValue("dislikeCount", recipe.is_dislike || 0);
     setValue("wishText", recipe.desc || "");
     setValue("favourite", recipe.favourite || false, true);
+
+    const previewImg = document.getElementById("previewImg");
+    if (previewImg) previewImg.src = recipe.imageUrl || "images/placeholder.png";
+
+    // Right side: meta
     setValue("prepTime", recipe.prep_time ? recipe.prep_time + "m" : "-");
     setValue("cookTime", recipe.cook_time ? recipe.cook_time + "m" : "-");
     setValue("servesCount", recipe.serv || "-");
 
-    const previewImg = document.getElementById("previewImg");
-    if (previewImg) previewImg.src = recipe.imageUrl || "No Image";
-
-    // Author details
+    // Right side: author
     if (recipe.userId) {
       const resUser = await fetch(`/api/users/public/${recipe.userId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (resUser.ok) {
         const { user } = await resUser.json();
-        document.getElementById("authorName").textContent = user?.name || "N/A";
-        document.getElementById("authorAvatar").src = user?.avatar || "images/chef.png";
+        setValue("authorName", user?.name || "N/A");
+        setValue("authorRole", "By"); // can append role if available
+        const avatar = document.getElementById("authorAvatar");
+        if (avatar) avatar.src = user?.avatar || "images/chef.png";
       }
     }
 

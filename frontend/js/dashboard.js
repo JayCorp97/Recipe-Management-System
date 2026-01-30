@@ -83,8 +83,13 @@ async function loadPage(page, btnId) {
       await window.loadRecipeDetails();
     }
 
-    if (page === "meal-planner.html" && window.loadMealPlanner) {
-      await window.loadMealPlanner();
+    if (page === "meal-planner.html" && window.initMealPlanner) {
+      await window.initMealPlanner();
+    }
+
+    if (page === "test.html") {
+      console.log("Test page loaded");
+
     }
 
     // Set active sidebar button
@@ -106,7 +111,7 @@ async function loadPage(page, btnId) {
 const sidebarMap = {
   RecipesBtn: "recipes.html",
   myRecipesBtn: "my-recipes.html",
-  favouritesBtn: "favourites.html",
+  favouritesBtn: "test.html", //favourites.html
   mealPlannerBtn: "meal-planner.html",
   settingsBtn: "settings.html"
 };
@@ -201,11 +206,8 @@ document.addEventListener("DOMContentLoaded", () => {
 /* ===========================
    My Recipes Page
 =========================== */
-<<<<<<< HEAD
 
 
-=======
->>>>>>> main
 async function loadMyRecipes() {
   const grid = document.getElementById("recipesGrid");
   if (!grid) return;
@@ -346,5 +348,6 @@ async function loadAllRecipes() {
 =========================== */
 window.loadMyRecipes = loadMyRecipes;
 window.loadAllRecipes = loadAllRecipes;
+window.initMealPlanner = initMealPlanner;
 window.escapeHtml = escapeHtml;
 window.renderStars = renderStars;

@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
+const MealPlan = require("../models/meals");
 const authMiddleware = require("../middleware/authMiddleware"); // checks JWT
 
 // =========================
@@ -130,5 +131,33 @@ router.get("/public/:id", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
+// =========================
+// SAVE MEAL PLAN
+// =========================
+router.put("/meals", authMiddleware, async (req, res) => {
+  try {
+    const { meals } = req.body;
+
+    // find existing meal plan for user
+    let plan = await MealPlan.findOne({ user: req.userId });
+
+    if (!plan) {
+      plan = new MealPlan({ user: req.userId, meals });
+    } else {
+      plan.meals = meals;
+    }
+
+    await plan.save();
+    res.json({ message: "Meal plan saved successfully", plan });
+  } catch (err) {
+    console.error("Save meal plan error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
+
+
 
 module.exports = router;

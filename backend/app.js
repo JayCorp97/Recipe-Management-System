@@ -1,7 +1,6 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
-const authBodyLimiter = require("./middleware/bodySizeLimiter");
 
 require("dotenv").config();
 

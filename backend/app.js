@@ -9,6 +9,8 @@ const authRoutes = require("./routes/auth");
 const recipeRoutes = require("./routes/recipes");
 const commentRoutes = require("./routes/comments");
 const usersRoutes = require("./routes/users");
+const activityRoutes = require("./routes/activities");
+const authBodyLimiter = require("./middleware/bodySizeLimiter");
 
 const app = express();
 
@@ -35,6 +37,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/recipes", recipeRoutes);
 app.use("/api/comments", commentRoutes);
 app.use("/api/users", usersRoutes);
+app.use("/api/activities", activityRoutes);
 
 // Handle 404 for unknown routes (MUST be last)
 app.use((req, res) => {

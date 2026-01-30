@@ -1,0 +1,220 @@
+{
+  "info": {
+    "name": "Admin Endpoints",
+    "description": "Postman collection for Recipe Management System admin-only API. Ensures admin routes are protected and behave correctly. Requires admin JWT in collection variable 'adminToken'.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "adminToken", "value": "" },
+    { "key": "userToken", "value": "" },
+    { "key": "recipeId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth Admin",
+      "item": [
+        {
+          "name": "GET /api/auth/admin/me - Admin (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('User has admin role', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('role', 'admin');",
+                  "  pm.expect(body).to.not.have.property('password');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/api/auth/admin/me"
+          }
+        },
+        {
+          "name": "GET /api/auth/admin/me - Regular User (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 403', () => pm.response.to.have.status(403));",
+                  "pm.test('Error indicates admin required', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.error).to.have.property('code', 'FORBIDDEN');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }],
+            "url": "{{baseUrl}}/api/auth/admin/me"
+          }
+        },
+        {
+          "name": "GET /api/auth/admin/me - No Token (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 401', () => pm.response.to.have.status(401));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/auth/admin/me"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Recipes Admin",
+      "item": [
+        {
+          "name": "GET /api/recipes/admin/all - Admin (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Response has recipes and count', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('recipes');",
+                  "  pm.expect(body).to.have.property('count');",
+                  "  pm.expect(body.recipes).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/api/recipes/admin/all"
+          }
+        },
+        {
+          "name": "GET /api/recipes/admin/all - Regular User (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 403', () => pm.response.to.have.status(403));",
+                  "pm.test('Error indicates forbidden', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.error).to.have.property('code', 'FORBIDDEN');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }],
+            "url": "{{baseUrl}}/api/recipes/admin/all"
+          }
+        },
+        {
+          "name": "GET /api/recipes/admin/all - No Token (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 401', () => pm.response.to.have.status(401));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/recipes/admin/all"
+          }
+        },
+        {
+          "name": "DELETE /api/recipes/admin/:id - Admin (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Message indicates admin delete', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.message).to.include('Recipe deleted by admin');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/api/recipes/admin/{{recipeId}}"
+          }
+        },
+        {
+          "name": "DELETE /api/recipes/admin/:id - Regular User (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 403', () => pm.response.to.have.status(403));",
+                  "pm.test('Error indicates forbidden', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.error).to.have.property('code', 'FORBIDDEN');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }],
+            "url": "{{baseUrl}}/api/recipes/admin/{{recipeId}}"
+          }
+        },
+        {
+          "name": "DELETE /api/recipes/admin/:id - No Token (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 401', () => pm.response.to.have.status(401));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/recipes/admin/{{recipeId}}"
+          }
+        }
+      ]
+    }
+  ]
+}

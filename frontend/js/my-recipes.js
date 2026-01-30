@@ -27,7 +27,11 @@ async function renderMyRecipes() {
   }
 
   try {
-    const res = await fetch("/api/recipes/mine");
+    const res = await fetch("/api/recipes/mine", {
+      headers: { 
+        Authorization: `Bearer ${token}` 
+      }
+    });
     const data = await res.json().catch(() => ({}));
 
     if (!res.ok) {
@@ -76,7 +80,12 @@ async function renderMyRecipes() {
 }
 
 async function deleteRecipeById(id) {
-  const res = await fetch(`/api/recipes/mine${encodeURIComponent(id)}`, {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    throw new Error("Please log in to delete recipes.");
+  }
+  
+  const res = await fetch(`/api/recipes/${encodeURIComponent(id)}`, {
     method: "DELETE",
     headers: {
       Authorization: `Bearer ${token}`
@@ -89,4 +98,5 @@ async function deleteRecipeById(id) {
 }
 
 window.renderMyRecipes = renderMyRecipes;
+window.loadMyRecipes = renderMyRecipes; // Alias for compatibility with dashboard.js
 window.deleteRecipeById = deleteRecipeById;

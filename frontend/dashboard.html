@@ -9,12 +9,17 @@
   <link rel="stylesheet" href="css/settings.css" />
   <link rel="stylesheet" href="css/recipe-details.css" />
   <link rel="stylesheet" href="css/activity-feed.css" />
+<<<<<<< HEAD
   <link rel="stylesheet" href="css/meal-planner.css" />
+=======
+>>>>>>> main
 
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <link rel="icon" type="image/x-icon" href="images/favicon.ico">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/solid.min.css" integrity="sha512-EHa6vH03/Ty92WahM0/tet1Qicl76zihDCkBnFhN3kFGQkC+mc86d7V+6y2ypiLbk3h0beZAGdUpzfMcb06cMg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <!-- Socket.IO Client -->
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 </head>
 
 <body>
@@ -73,6 +78,7 @@
 
 <!-- Include the global script -->
 <script src="js/authCheck.js"></script>
+<script src="js/activity-feed.js"></script>
 <script src="js/dashboard.js"></script>
 <script src="js/filterCate.js"></script>
 <script src="js/settings.js"></script>
@@ -114,15 +120,55 @@
   });
 
   // Activity feed toggle
-  const activityFeedContainer = document.getElementById("activityFeedContainer");
-  const activityFeedHeader = document.getElementById("activityFeedHeader");
-  const activityFeedToggle = document.getElementById("activityFeedToggle");
-  
-  if (activityFeedHeader && activityFeedToggle) {
-    activityFeedHeader.addEventListener("click", () => {
+  (function() {
+    const activityFeedContainer = document.getElementById("activityFeedContainer");
+    const activityFeedHeader = document.getElementById("activityFeedHeader");
+    const activityFeedToggle = document.getElementById("activityFeedToggle");
+    
+    if (!activityFeedContainer || !activityFeedHeader || !activityFeedToggle) {
+      console.warn("Activity feed elements not found");
+      return;
+    }
+    
+    function updateToggleIcon() {
+      const isCollapsed = activityFeedContainer.classList.contains("collapsed");
+      activityFeedToggle.textContent = isCollapsed ? "▲" : "▼";
+    }
+    
+    function toggleActivityFeed() {
       activityFeedContainer.classList.toggle("collapsed");
+      updateToggleIcon();
+    }
+    
+    // Toggle on button click
+    activityFeedToggle.addEventListener("click", function(e) {
+      e.stopPropagation();
+      toggleActivityFeed();
     });
-  }
+    
+    // Toggle on header click (but not when clicking the button)
+    // Only works when NOT collapsed (when collapsed, container handles it)
+    activityFeedHeader.addEventListener("click", function(e) {
+      if (!activityFeedContainer.classList.contains("collapsed")) {
+        // Only toggle if not clicking the button or its children
+        if (e.target !== activityFeedToggle && !activityFeedToggle.contains(e.target)) {
+          toggleActivityFeed();
+        }
+      }
+    });
+    
+    // When collapsed, make the entire container clickable to expand
+    activityFeedContainer.addEventListener("click", function(e) {
+      if (activityFeedContainer.classList.contains("collapsed")) {
+        // When collapsed, clicking anywhere expands it
+        toggleActivityFeed();
+        e.stopPropagation();
+      }
+    });
+    
+    // Initialize icon on page load
+    updateToggleIcon();
+  })();
 
   // Refresh activity feed when page becomes visible (e.g., after redirect from recipe creation)
   if (window.activityFeed) {

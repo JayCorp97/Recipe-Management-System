@@ -7,13 +7,13 @@ async function loadRecipeDetails(recipeId) {
   if (!mainContent) return;
 
   try {
-    // 1️⃣ Load HTML layout
+    // Load HTML layout
     const res = await fetch("/pages/recipedetails.html");
     if (!res.ok) throw new Error("Failed to load recipe details layout");
     const html = await res.text();
     mainContent.innerHTML = html;
 
-    // 2️⃣ Fetch recipe data from API
+    // Fetch recipe data from API
     const token = localStorage.getItem("token");
     if (!token) throw new Error("You must be logged in");
 
@@ -26,7 +26,7 @@ async function loadRecipeDetails(recipeId) {
 
     const r = data.recipe;
 
-    // 3️⃣ Populate the fields AFTER HTML is loaded
+    // Populate the fields AFTER HTML is loaded
     document.getElementById("title").value = r.title || "";
     document.getElementById("category").value = r.category || "";
     document.getElementById("wishText").value = r.desc || "";
@@ -42,7 +42,7 @@ async function loadRecipeDetails(recipeId) {
       if (placeholder) placeholder.style.display = "none";
     }
 
-    // 4️⃣ Back button handler
+    // Back button handler
     const backBtn = document.getElementById("backBtn");
     if (backBtn) {
       backBtn.addEventListener("click", async (e) => {

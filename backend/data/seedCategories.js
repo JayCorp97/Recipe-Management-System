@@ -17,7 +17,7 @@ mongoose.connection.once('open', async () => {
       .collection('categories')
       .insertMany(categories);
 
-    console.log('✅ Categories inserted successfully');
+    console.log('Categories inserted successfully');
     process.exit();
   } catch (err) {
     console.error(err);

@@ -1,0 +1,82 @@
+.meal-planner {
+  padding: 30px;
+  max-width: 1200px;
+  margin: auto;
+}
+
+.planner-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.planner-header p {
+  color: #777;
+}
+
+.planner-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+.day-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.day-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+}
+
+.day-card h4 {
+  margin-bottom: 12px;
+  color: #333;
+}
+
+.day-card label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-top: 10px;
+  display: block;
+}
+
+.meal-select {
+  width: 100%;
+  padding: 8px 10px;
+  margin-top: 4px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  background: #fafafa;
+}
+
+.meal-select:focus {
+  outline: none;
+  border-color: #4caf50;
+  background: #fff;
+}
+
+.planner-actions {
+  text-align: center;
+  margin-top: 30px;
+}
+
+#saveMealPlan {
+  background: linear-gradient(135deg, #4caf50, #43a047);
+  color: white;
+  border: none;
+  padding: 12px 28px;
+  border-radius: 25px;
+  font-size: 1rem;
+  cursor: pointer;
+  box-shadow: 0 6px 15px rgba(76, 175, 80, 0.4);
+}
+
+#saveMealPlan:hover {
+  opacity: 0.9;
+}

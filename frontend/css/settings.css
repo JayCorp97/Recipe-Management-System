@@ -89,66 +89,8 @@
   background-color: #45A049;
   border-color: #45A049;
 }
-
-/* Toggle Switches for Preferences */
-.toggle-field {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.toggle-label {
-  position: relative;
-  display: inline-block;
-  width: 50px;
-  height: 28px;
-}
-
-.toggle-label input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.toggle-label .slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0; left: 0;
-  right: 0; bottom: 0;
-  background-color: #D1D5DB;
-  border-radius: 34px;
-  transition: 0.3s;
-}
-
-.toggle-label .slider::before {
-  position: absolute;
-  content: "";
-  height: 20px;
-  width: 20px;
-  left: 4px;
-  top: 4px;
-  background-color: white;
-  border-radius: 50%;
-  transition: 0.3s;
-}
-
-.toggle-label input:checked + .slider {
-  background-color: #3395d6;
-}
-
-.toggle-label input:checked + .slider::before {
-  transform: translateX(22px);
-}
-
-.toggle-text {
-  font-size: 14px;
-  color: #111827;
-  user-select: none;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .form-row {
-    flex-direction: column;
-  }
+.actions-bar .btn-secondary {
+  background-color: #E5E7EB;
+  border: 1px solid #D1D5DB;
+  color: #374151;
 }

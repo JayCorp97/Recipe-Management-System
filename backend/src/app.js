@@ -4,7 +4,7 @@ const cors = require("cors");
 const path = require("path");
 require("dotenv").config();
 
-console.log("🔥 APP.JS LOADED");
+console.log("APP.JS LOADED");
 
 const authRoutes = require("./routes/auth");
 const recipeRoutes = require("./routes/recipes");

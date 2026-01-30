@@ -9,23 +9,29 @@
 <div class="edit-card">
   <h3 class="section-title">Profile</h3>
   <p class="section-subtitle">Manage your personal information</p>
+
   <div class="edit-form">
     <div class="form-row">
       <div class="field">
         <label for="firstName">First Name</label>
-        <input type="text" id="firstName" placeholder="John" />
+        <input type="text" id="firstName" placeholder="John" autocomplete="given-name" />
       </div>
+
       <div class="field">
         <label for="lastName">Last Name</label>
-        <input type="text" id="lastName" placeholder="Doe" />
+        <input type="text" id="lastName" placeholder="Doe" autocomplete="family-name" />
       </div>
     </div>
+
     <div class="field">
       <label for="email">Email</label>
-      <input type="email" id="email" placeholder="john.doe@example.com" />
+      <input type="email" id="email" placeholder="john.doe@example.com" autocomplete="email" />
     </div>
+
     <div class="actions-bar">
-      <button class="btn btn-primary" id="updateProfileBtn">Update Profile</button>
+      <button class="btn btn-primary" id="updateProfileBtn" type="button">
+        Update Profile
+      </button>
     </div>
   </div>
 </div>
@@ -34,46 +40,68 @@
 <div class="edit-card">
   <h3 class="section-title">Change Password</h3>
   <p class="section-subtitle">Keep your account secure</p>
+
   <div class="edit-form">
     <div class="field">
       <label for="currentPassword">Current Password</label>
-      <input type="password" id="currentPassword" placeholder="••••••••" />
+      <input type="password" id="currentPassword" autocomplete="current-password" />
     </div>
+
     <div class="field">
       <label for="newPassword">New Password</label>
-      <input type="password" id="newPassword" placeholder="••••••••" />
+      <input type="password" id="newPassword" autocomplete="new-password" />
     </div>
+
     <div class="field">
       <label for="confirmPassword">Confirm New Password</label>
-      <input type="password" id="confirmPassword" placeholder="••••••••" />
+      <input type="password" id="confirmPassword" autocomplete="new-password" />
     </div>
+
     <div class="actions-bar">
-      <button class="btn btn-primary" id="changePasswordBtn">Change Password</button>
+      <button class="btn btn-primary" id="changePasswordBtn" type="button">
+        Change Password
+      </button>
     </div>
   </div>
 </div>
 
 <!-- Preferences Section -->
-<div class="edit-card">
+<div class="edit-card" data-section="preferences">
   <h3 class="section-title">Preferences</h3>
   <p class="section-subtitle">Customize your experience</p>
+
   <div class="edit-form">
+    <!-- Dark Mode Toggle -->
     <div class="field toggle-field">
-      <label class="toggle-label">
-        <input type="checkbox" id="darkModeToggle" />
-        <span class="slider"></span>
-        <span class="toggle-text">Enable Dark Mode</span>
-      </label>
+      
+      <table aria-colspan="2">
+        <tr>
+          <td><div class="toggle-label">Dark Mode</div></td>
+          <td><label class="switch">
+        <input type="checkbox" id="darkModeToggle">
+      </label></td>
+        </tr>
+      </table>
     </div>
+
+    <!-- Email Notifications Toggle -->
     <div class="field toggle-field">
-      <label class="toggle-label">
-        <input type="checkbox" id="emailNotifications" />
-        <span class="slider"></span>
-        <span class="toggle-text">Email Notifications</span>
-      </label>
+      
+      <table aria-colspan="2">
+        <tr>
+          <td><div class="toggle-label">Email Notifications</div></td>
+          <td><label class="switch">
+        <input type="checkbox" id="emailNotifications">
+      </label></td>
+        </tr>
+      </table>
     </div>
+
     <div class="actions-bar">
-      <button class="btn btn-primary" id="savePreferencesBtn">Save Preferences</button>
+      <button class="btn btn-primary" id="savePreferencesBtn" type="button">
+        Save Preferences
+      </button>
     </div>
   </div>
 </div>
+

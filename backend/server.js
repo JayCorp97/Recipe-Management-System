@@ -10,18 +10,10 @@ const PORT = process.env.PORT || 5000;
 (async () => {
   try {
     await connectDB();
-    console.log(" Database connected");
+    console.log("Database connected");
 
-    // Create HTTP server
-    const httpServer = http.createServer(app);
-
-    // Initialize Socket.IO
-    initSocket(httpServer);
-
-    // Start server
-    httpServer.listen(PORT, () => {
-      console.log(` Server running on http://localhost:${PORT}`);
-      console.log(` Socket.IO ready for connections`);
+    app.listen(PORT, () => {
+      console.log(`Server running on http://localhost:${PORT}..`);
     });
   } catch (e) {
     console.error("Server failed to start:", e);

@@ -1,35 +1,163 @@
 const express = require("express");
 const router = express.Router();
+const bcrypt = require("bcryptjs");
 const User = require("../models/User");
+const MealPlan = require("../models/meals");
+const authMiddleware = require("../middleware/authMiddleware"); // checks JWT
 
-// GET public user details by ID (no auth required)
-router.get("/public/:id", async (req, res) => {
+// =========================
+// GET CURRENT USER INFO
+// =========================
+router.get("/me", authMiddleware, async (req, res) => {
   try {
-    const userId = req.params.id;
-
-    // console.log("🔥 user route LOADED");
-    // Only select safe public fields
-    const user = await User.findById(userId).select("f_name l_name role");
-
+    const user = await User.findById(req.userId).select("-password"); // exclude password
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
+    res.json(user);
+  } catch (err) {
+    console.error("Get user error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 
-    // Combine first + last name
-    const author_name = `${user.f_name} ${user.l_name}`;
+// =========================
+// UPDATE PROFILE (name, email)
+// =========================
+router.put("/profile", authMiddleware, async (req, res) => {
+  try {
+    const { f_name, l_name, email } = req.body;
+
+    if (!f_name || !l_name || !email) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    // Check if email is already used by another user
+    const existingUser = await User.findOne({ email, _id: { $ne: req.userId } });
+    if (existingUser) {
+      return res.status(400).json({ message: "Email is already in use" });
+    }
+
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    user.f_name = f_name;
+    user.l_name = l_name;
+    user.email = email;
+
+    await user.save();
+
+    res.json({ message: "Profile updated successfully", user: user });
+  } catch (err) {
+    console.error("Update profile error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// =========================
+// CHANGE PASSWORD
+// =========================
+router.put("/password", authMiddleware, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: "All password fields are required" });
+    }
+
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) return res.status(401).json({ message: "Current password is incorrect" });
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+
+    await user.save();
+
+    res.json({ message: "Password changed successfully" });
+  } catch (err) {
+    console.error("Change password error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// =========================
+// SAVE PREFERENCES
+// =========================
+router.put("/preferences", authMiddleware, async (req, res) => {
+  try {
+    const { darkMode, emailNotifications } = req.body;
+
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    user.preferences = user.preferences || {};
+    user.preferences.darkMode = !!darkMode;
+    user.preferences.emailNotifications = !!emailNotifications;
+
+    user.mode = darkMode ? "true" : "false";
+
+    await user.save();
+
+    res.json({ message: "Preferences saved successfully" });
+  } catch (err) {
+    console.error("Save preferences error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// =========================
+// PUBLIC USER INFO (optional)
+// =========================
+router.get("/public/:id", async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const user = await User.findById(userId).select("f_name l_name role");
+
+    if (!user) return res.status(404).json({ message: "User not found" });
 
     res.json({
       user: {
         id: user._id,
-        name: author_name,
+        name: `${user.f_name} ${user.l_name}`,
         role: user.role,
         avatarUrl: "images/chef.png" // default avatar
       }
     });
   } catch (err) {
-    console.error(err);
+    console.error("Get public user error:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
+
+// =========================
+// SAVE MEAL PLAN
+// =========================
+router.put("/meals", authMiddleware, async (req, res) => {
+  try {
+    const { meals } = req.body;
+
+    // find existing meal plan for user
+    let plan = await MealPlan.findOne({ user: req.userId });
+
+    if (!plan) {
+      plan = new MealPlan({ user: req.userId, meals });
+    } else {
+      plan.meals = meals;
+    }
+
+    await plan.save();
+    res.json({ message: "Meal plan saved successfully", plan });
+  } catch (err) {
+    console.error("Save meal plan error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
+
+
 
 module.exports = router;

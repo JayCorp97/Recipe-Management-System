@@ -23,6 +23,7 @@ const recipeSchema = new mongoose.Schema(
 
     // Soft delete / trash: set when recipe is deleted (bulk or single soft-delete)
     deletedAt: { type: Date, default: null },
+    deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null }
   },
   { timestamps: true }
 );

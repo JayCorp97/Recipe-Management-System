@@ -25,6 +25,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   const panelTitle = document.querySelector(".panel-title");
   const panelSubtitle = document.querySelector(".panel-subtitle");
   const btnText = submitBtn?.querySelector(".btn-text");
+  const categoryEl = document.getElementById("category");
+  let pendingCategory = null;
 
   // Check if we're in edit mode
   const urlParams = new URLSearchParams(window.location.search);
@@ -192,6 +194,36 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Initialize: Load existing recipes on page load
   loadExistingRecipes();
+
+  // Load categories from admin-managed list
+  async function loadCategories() {
+    if (!categoryEl) return;
+    try {
+      const res = await fetch("/api/categories");
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !Array.isArray(data.categories)) return;
+
+      const options = data.categories
+        .map((cat) => `<option value="${escapeHtml(cat.name)}">${escapeHtml(cat.name)}</option>`)
+        .join("");
+      categoryEl.innerHTML = `<option value="">Select a category</option>${options}`;
+
+      if (pendingCategory) {
+        categoryEl.value = pendingCategory;
+        if (categoryEl.value !== pendingCategory) {
+          const option = document.createElement("option");
+          option.value = pendingCategory;
+          option.textContent = pendingCategory;
+          categoryEl.appendChild(option);
+          categoryEl.value = pendingCategory;
+        }
+      }
+    } catch (err) {
+      console.error("Error loading categories:", err);
+    }
+  }
+
+  loadCategories();
 
   // Real-time duplicate checking on title input (debounced)
   if (titleInput) {
@@ -507,9 +539,18 @@ document.addEventListener("DOMContentLoaded", async () => {
       const descEl = document.getElementById("desc");
       if (descEl) descEl.value = currentRecipe.desc || "";
 
-      const categoryEl = document.getElementById("category");
-      if (categoryEl && currentRecipe.category) {
-        categoryEl.value = currentRecipe.category;
+      if (currentRecipe.category) {
+        pendingCategory = currentRecipe.category;
+        if (categoryEl) {
+          categoryEl.value = currentRecipe.category;
+          if (categoryEl.value !== currentRecipe.category) {
+            const option = document.createElement("option");
+            option.value = currentRecipe.category;
+            option.textContent = currentRecipe.category;
+            categoryEl.appendChild(option);
+            categoryEl.value = currentRecipe.category;
+          }
+        }
       }
 
       // Rating

@@ -39,6 +39,15 @@ const userSchema = new mongoose.Schema({
   otpExpires: {
     type: Date
   },
+  deletedAt: {
+    type: Date,
+    default: null
+  },
+  deletedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    default: null
+  },
   mode: {
     type: Boolean
   }

@@ -1,0 +1,91 @@
+<section class="admin-card">
+  <div class="admin-card-header">
+    <h2>Admin Insights</h2>
+    <div class="admin-actions">
+      <button class="btn btn-secondary" id="refreshAnalyticsBtn">
+        <i class="fa-solid fa-rotate"></i>
+        Refresh
+      </button>
+    </div>
+  </div>
+
+  <div class="filters">
+    <select id="analyticsRange">
+      <option value="7">Last 7 days</option>
+      <option value="30" selected>Last 30 days</option>
+      <option value="90">Last 90 days</option>
+    </select>
+  </div>
+
+  <div class="analytics-grid" id="analyticsOverview">
+    <div class="admin-card">
+      <h3>Total Users</h3>
+      <p class="metric" id="totalUsers">0</p>
+      <p class="status-text" id="userGrowth">Growth 0%</p>
+    </div>
+    <div class="admin-card">
+      <h3>Total Recipes</h3>
+      <p class="metric" id="totalRecipes">0</p>
+      <p class="status-text" id="recipeGrowth">Growth 0%</p>
+    </div>
+    <div class="admin-card">
+      <h3>Average Rating</h3>
+      <p class="metric" id="avgRating">0</p>
+      <p class="status-text">Across all recipes</p>
+    </div>
+    <div class="admin-card">
+      <h3>Categories</h3>
+      <p class="metric" id="totalCategories">0</p>
+      <p class="status-text">Managed categories</p>
+    </div>
+  </div>
+
+  <div class="analytics-section">
+    <h3>Trends</h3>
+    <div class="chart-grid">
+      <div class="admin-card chart-card">
+        <p class="chart-title">New Users</p>
+        <div class="chart-wrap">
+          <canvas id="userTrendChart"></canvas>
+        </div>
+      </div>
+      <div class="admin-card chart-card">
+        <p class="chart-title">New Recipes</p>
+        <div class="chart-wrap">
+          <canvas id="recipeTrendChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="analytics-section">
+    <h3>Breakdowns</h3>
+    <div class="chart-grid">
+      <div class="admin-card chart-card">
+        <p class="chart-title">Recipe Ratings</p>
+        <div class="chart-wrap">
+          <canvas id="ratingBucketChart"></canvas>
+        </div>
+      </div>
+      <div class="admin-card chart-card">
+        <p class="chart-title">User Roles</p>
+        <div class="chart-wrap">
+          <canvas id="roleBreakdownChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="analytics-section">
+    <h3>Top Categories</h3>
+    <div id="categoryUsageWrap" class="table-wrap"></div>
+  </div>
+
+  <div class="analytics-section">
+    <h3>Top Tags</h3>
+    <div id="tagInsightsWrap" class="table-wrap"></div>
+  </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="js/admin-analytics.js"></script>

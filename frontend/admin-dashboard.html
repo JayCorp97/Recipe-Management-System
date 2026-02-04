@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Dashboard | Recipe Management System</title>
+  <link rel="stylesheet" href="css/admin-dashboard.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <header class="admin-header">
+    <div class="logo">
+      <img src="images/rms_logo.png" alt="RMS Logo" />
+      <span>Admin Panel</span>
+    </div>
+    <div class="header-actions">
+      <span class="username" id="usernameDisplay">Admin</span>
+      <button class="logout-btn" id="logoutBtn">
+        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+        Logout
+      </button>
+    </div>
+  </header>
+
+  <div class="admin-container">
+    <aside class="admin-sidebar">
+      <button class="active" id="adminUsersBtn">
+        <i class="fa-solid fa-users"></i>
+        Manage Users
+      </button>
+      <button id="adminCategoriesBtn">
+        <i class="fa-solid fa-tags"></i>
+        Manage Categories
+      </button>
+      <button id="adminRecipesBtn">
+        <i class="fa-solid fa-kitchen-set"></i>
+        Manage Recipes
+      </button>
+      <button id="adminAnalyticsBtn">
+        <i class="fa-solid fa-chart-line"></i>
+        Insights
+      </button>
+    </aside>
+
+    <main class="admin-content" id="adminContent">
+      <!-- Admin pages load here -->
+    </main>
+  </div>
+
+  <script src="js/adminAuthCheck.js"></script>
+  <script src="js/admin-dashboard.js"></script>
+</body>
+</html>

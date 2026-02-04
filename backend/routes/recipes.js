@@ -9,6 +9,7 @@ const User = require("../models/User");
 const auth = require("../middleware/authMiddleware");
 const { userOrAdmin, adminOnly } = require("../middleware/roleMiddleware");
 const { emitActivity } = require("../src/socket");
+const { logAdminAction } = require("../utils/adminAudit");
 
 const router = express.Router();
 
@@ -328,11 +329,58 @@ router.delete("/:id", auth, userOrAdmin, async (req, res) => {
   }
 });
 
-/** Admin: get all recipes */
+/** Admin: get all recipes with pagination & filters */
 router.get("/admin/all", auth, adminOnly, async (req, res) => {
   try {
-    const recipes = await Recipe.find({ deletedAt: null }).sort({ createdAt: -1 });
-    return res.json({ recipes, count: recipes.length });
+    const page = Number(req.query.page || 1);
+    const limit = Math.min(Number(req.query.limit || 10), 100);
+    const search = safeTrim(req.query.search);
+    const category = safeTrim(req.query.category);
+    const userId = safeTrim(req.query.userId);
+    const status = safeTrim(req.query.status, "active"); // active | deleted | all
+
+    if (!Number.isInteger(page) || page < 1) {
+      return res.status(400).json({ message: "Invalid page value" });
+    }
+    if (!Number.isInteger(limit) || limit < 1) {
+      return res.status(400).json({ message: "Invalid limit value" });
+    }
+
+    const filter = {};
+    if (status === "active") filter.deletedAt = null;
+    if (status === "deleted") filter.deletedAt = { $ne: null };
+    if (status === "all") filter.deletedAt = { $exists: true };
+
+    if (search) {
+      filter.$or = [
+        { title: { $regex: new RegExp(search, "i") } },
+        { desc: { $regex: new RegExp(search, "i") } },
+        { category: { $regex: new RegExp(search, "i") } },
+        { tags: { $elemMatch: { $regex: new RegExp(search, "i") } } }
+      ];
+    }
+
+    if (category) {
+      filter.category = { $regex: new RegExp(`^${category}$`, "i") };
+    }
+
+    if (userId) {
+      filter.userId = toObjectId(userId);
+    }
+
+    const total = await Recipe.countDocuments(filter);
+    const recipes = await Recipe.find(filter)
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit);
+
+    return res.json({
+      recipes,
+      page,
+      limit,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / limit))
+    });
   } catch (err) {
     console.error("Admin get all error:", err);
     return res.status(500).json({ message: "Server error", error: err.message });
@@ -342,14 +390,100 @@ router.get("/admin/all", auth, adminOnly, async (req, res) => {
 /** Admin: delete any recipe */
 router.delete("/admin/:id", auth, adminOnly, async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: "Invalid recipe id" });
+    }
+
     const recipe = await Recipe.findById(req.params.id);
     if (!recipe) return res.status(404).json({ message: "Recipe not found" });
 
+    const mode = String(req.query.mode || "hard");
+    if (mode === "soft") {
+      recipe.deletedAt = new Date();
+      recipe.deletedBy = req.userId;
+      await recipe.save();
+      await logAdminAction({
+        actorId: req.userId,
+        action: "RECIPE_SOFT_DELETED",
+        targetType: "Recipe",
+        targetId: recipe._id
+      });
+      return res.json({ message: "Recipe soft deleted by admin" });
+    }
+
     await Recipe.deleteOne({ _id: recipe._id });
     await logActivity({ userId: req.userId, action: "deleted", recipe });
+    await logAdminAction({
+      actorId: req.userId,
+      action: "RECIPE_HARD_DELETED",
+      targetType: "Recipe",
+      targetId: recipe._id
+    });
     return res.json({ message: "Recipe deleted by admin" });
   } catch (err) {
     console.error("Admin delete error:", err);
+    return res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
+/** Admin: bulk delete recipes (soft/hard) */
+router.post("/admin/bulk-delete", auth, adminOnly, async (req, res) => {
+  try {
+    const ids = Array.isArray(req.body.ids) ? req.body.ids : [];
+    if (!ids.length) return res.status(400).json({ message: "ids array required" });
+
+    const mode = String(req.body.mode || "hard");
+    const deleted = [];
+    const skipped = [];
+
+    for (const id of ids) {
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        skipped.push({ id, reason: "invalid_id" });
+        continue;
+      }
+      const recipe = await Recipe.findById(id);
+      if (!recipe) {
+        skipped.push({ id, reason: "not_found" });
+        continue;
+      }
+
+      if (mode === "soft") {
+        if (recipe.deletedAt) {
+          skipped.push({ id, reason: "already_deleted" });
+          continue;
+        }
+        recipe.deletedAt = new Date();
+        recipe.deletedBy = req.userId;
+        await recipe.save();
+        deleted.push(recipe._id);
+        await logAdminAction({
+          actorId: req.userId,
+          action: "RECIPE_SOFT_DELETED",
+          targetType: "Recipe",
+          targetId: recipe._id
+        });
+        continue;
+      }
+
+      await Recipe.deleteOne({ _id: recipe._id });
+      deleted.push(recipe._id);
+      await logAdminAction({
+        actorId: req.userId,
+        action: "RECIPE_HARD_DELETED",
+        targetType: "Recipe",
+        targetId: recipe._id
+      });
+    }
+
+    return res.json({
+      message: "Bulk delete completed",
+      deletedCount: deleted.length,
+      skippedCount: skipped.length,
+      deleted,
+      skipped
+    });
+  } catch (err) {
+    console.error("Admin bulk delete error:", err);
     return res.status(500).json({ message: "Server error", error: err.message });
   }
 });

@@ -289,8 +289,8 @@
         // Save JWT token
         localStorage.setItem('token', data.token);
 
-        // Redirect to dashboard (user is guaranteed to be admin if login succeeded)
-        window.location.href = 'dashboard.html';
+        // Redirect to admin dashboard
+        window.location.href = 'admin-dashboard.html';
 
       } catch (err) {
         console.error(err);

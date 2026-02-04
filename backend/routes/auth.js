@@ -153,6 +153,12 @@ router.post("/login", authLimiter, validateLogin, async (req, res) => {
         "Invalid email or password");
     }
 
+    // Deleted user check
+    if (user.deletedAt) {
+      return sendError(res, 403, ErrorCodes.FORBIDDEN,
+        "Account has been deleted");
+    }
+
     // Compare passwords
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
@@ -186,6 +192,60 @@ router.post("/login", authLimiter, validateLogin, async (req, res) => {
   }
 });
 
+/**
+ * @route   POST /api/auth/admin/login
+ * @desc    Admin login
+ */
+router.post("/admin/login", authLimiter, validateLogin, async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const normalizedEmail = email.toLowerCase().trim();
+    const user = await User.findOne({ email: normalizedEmail });
+    if (!user) {
+      return sendError(res, 401, ErrorCodes.AUTH_ERROR,
+        "Invalid email or password");
+    }
+
+    if (user.deletedAt) {
+      return sendError(res, 403, ErrorCodes.FORBIDDEN,
+        "Account has been deleted");
+    }
+
+    if (user.active !== 1) {
+      return sendError(res, 403, ErrorCodes.FORBIDDEN,
+        "Account is inactive");
+    }
+
+    if (user.role !== "admin") {
+      return sendError(res, 403, ErrorCodes.FORBIDDEN,
+        "Admin access required");
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return sendError(res, 401, ErrorCodes.AUTH_ERROR,
+        "Invalid email or password");
+    }
+
+    const token = jwt.sign(
+      {
+        id: user._id,
+        role: user.role || "admin"
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "24h" }
+    );
+
+    return res.json({ token });
+  } catch (error) {
+    console.error("Admin login error:", error);
+    return sendError(res, 500, ErrorCodes.SERVER_ERROR,
+      "Server error",
+      process.env.NODE_ENV === "development" ? error.message : undefined);
+  }
+});
+
 
 /**
  * REQUEST OTP LOGIN
@@ -203,6 +263,10 @@ router.post("/request-otp", authLimiter, async (req, res) => {
 
     if (!user) {
       return sendError(res, 404, ErrorCodes.NOT_FOUND, "User not found");
+    }
+
+    if (user.deletedAt) {
+      return sendError(res, 403, ErrorCodes.FORBIDDEN, "Account has been deleted");
     }
 
     if (user.active !== 1) {

@@ -10,7 +10,8 @@
     "test:coverage": "npx nyc npx mocha test --config test/.mocharc.js",
     "start": "node server.js",
     "create-admin": "node scripts/createAdminSimple.js",
-    "test-admin": "node scripts/testAdminLogin.js"
+    "test-admin": "node scripts/testAdminLogin.js",
+    "seed-demo": "node scripts/seedDemoData.js"
   },
   "author": "Janitha",
   "license": "ISC",

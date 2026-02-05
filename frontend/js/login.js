@@ -195,3 +195,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 1000);
   }
 });
+
+// forgot password
+document.getElementById('forgotPasswordLink').addEventListener('click', function(e) {
+  e.preventDefault();
+  
+  setTimeout(() => {
+    window.location.href = 'forgot-password.html';
+  }, 100);
+
+});

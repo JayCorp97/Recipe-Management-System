@@ -2,8 +2,9 @@ const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
-const MealPlan = require("../models/meals");
+const MealPlan = require("../models/Meals");
 const authMiddleware = require("../middleware/authMiddleware"); // checks JWT
+const { verifyOtp } = require('../utils/otpUtils');
 
 // =========================
 // GET CURRENT USER INFO
@@ -157,6 +158,81 @@ router.put("/meals", authMiddleware, async (req, res) => {
 });
 
 
+// =========================
+// FORGOT PASSWORD - VERIFY EMAIL & SEND OTP
+// =========================
+const { generateOtp } = require("../utils/otpUtils");
+
+// POST /api/users/verify-email
+router.post("/verify-email", async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    // 1Validate input
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    // Check if user exists
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "Email not found" });
+    }
+
+    // Generate OTP using utility function
+    const { otp, hashedOtp, expiresAt } = await generateOtp();
+
+    // Save hashed OTP and expiry to user
+    user.otp = hashedOtp;
+    user.otpExpires = expiresAt;
+    await user.save();
+
+    // Send OTP via email service (TODO)
+    console.log(`Password Reset OTP for ${email}: ${otp} (expires at ${expiresAt})`);
+
+    // Respond to frontend
+    res.json({ message: "Email verified. OTP sent successfully." });
+
+  } catch (err) {
+    console.error("Forgot password email verify error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+module.exports = router;
+
+
+
+// =========================
+// OTP verification route
+// =========================
+
+router.post("/verify-otp", async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({ message: "Email, OTP, and new password are required" });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const isValid = await verifyOtp(otp, user.otp, user.otpExpires);
+    if (!isValid) return res.status(400).json({ message: "Invalid or expired OTP" });
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    user.otp = undefined;
+    user.otpExpires = undefined;
+    await user.save();
+
+    res.json({ message: "Password reset successfully" });
+
+  } catch (err) {
+    console.error("Verify OTP error:", err);
+    res.status(500).json({ message: "Server error" }); // <-- always JSON
+  }
+});
 
 
 
